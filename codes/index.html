@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FS Codes">
+<meta name="theme-color" content="#3a1f33">
+<title>FS Codes</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+:root{--acc:#f2542d;--ink:#16191d;--mut:#6b7280;--bg:#f4f1ec;--card:#fff;--field:#f2f3f5;--line:#e6e7ea;--plum:#3a1f33;--ok:#1f9d55;--warn:#c27c0e;--bad:#e5484d}
+@media (prefers-color-scheme:dark){:root{--ink:#f2f3f5;--mut:#9aa0a8;--bg:#141517;--card:#1b1d21;--field:#272a30;--line:#30333a}}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;background:var(--bg)}
+body{font:16px/1.45 'DM Sans',system-ui,-apple-system,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+header{background:var(--plum);color:#f6efe2;padding:calc(env(safe-area-inset-top) + 16px) 18px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:22px}
+header .who{font-size:13px;color:#e3d3dc}
+header button{background:rgba(255,255,255,.14);border:0;border-radius:10px;min-height:38px;padding:0 12px;color:#fff;font-weight:700;font-size:14px}
+main{max-width:640px;margin:0 auto;padding:16px 14px calc(env(safe-area-inset-bottom) + 30px)}
+.card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+h2{font-size:18px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+h2 .n{background:var(--acc);color:#fff;border-radius:999px;font-size:13px;padding:1px 8px}
+.mut{color:var(--mut)}.small{font-size:14px}
+p{margin:0 0 10px}
+input[type=email],input[type=password]{display:block;width:100%;margin-top:6px;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1.5px solid transparent;border-radius:12px;padding:12px 14px;outline:none;-webkit-appearance:none}
+input:focus{border-color:var(--acc)}
+label{display:block;font-size:14px;font-weight:500;color:var(--mut);margin-bottom:12px}
+.btn{min-height:44px;border-radius:12px;border:0;padding:0 16px;font-weight:700;background:var(--field);display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn.primary{background:var(--acc);color:#fff}.btn.ok{background:var(--ok);color:#fff}.btn.danger{color:var(--bad)}
+.btn.sm{min-height:36px;padding:0 12px;font-size:14px}
+.btn:disabled{opacity:.55}
+.btn:focus-visible,.sw:focus-within{outline:3px solid var(--acc);outline-offset:2px}
+.row{display:flex;gap:8px;align-items:flex-end}.row label{flex:1;margin:0}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.sw{position:relative;width:52px;height:32px;flex:none}
+.sw input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.sw span{position:absolute;inset:0;border-radius:16px;background:var(--line);transition:background .2s;pointer-events:none}
+.sw span::after{content:'';position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+.sw input:checked+span{background:var(--ok)}.sw input:checked+span::after{transform:translateX(20px)}
+.item{border-top:1px solid var(--line);padding:12px 0;display:flex;gap:10px;align-items:center}
+.item:first-of-type{border-top:0}
+.item .t{flex:1}
+.item .t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .t small{display:block;color:var(--mut);font-size:13px}
+.item .acts{display:flex;gap:6px;flex:none}
+.tag{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:1px 8px;margin-right:6px;vertical-align:1px;background:var(--field);color:var(--mut)}
+.tag.neu{background:#fde7df;color:#b4381a}.tag.verschickt,.tag.eingeloest{background:#dcf3e5;color:#16733f}.tag.fehler{background:#fde2e3;color:#b3262b}.tag.sendet,.tag.freigegeben{background:#fdf1d8;color:#8a5a06}
+.code{font-variant-numeric:tabular-nums;letter-spacing:.06em}
+.empty{color:var(--mut);padding:8px 0;font-size:14px}
+.err{color:var(--bad);font-weight:500;min-height:1.4em;margin:8px 0 0;font-size:14px}
+.tabs{display:flex;gap:6px;margin:10px 0 4px;flex-wrap:wrap}
+.tabs button{border:0;border-radius:999px;min-height:34px;padding:0 12px;background:var(--field);font-size:14px;font-weight:500}
+.tabs button.on{background:var(--ink);color:var(--card)}
+#login{max-width:420px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 40px) 18px}
+#login h1{font-size:34px;margin:0 0 6px}
+body.in #login{display:none}body:not(.in) #app{display:none}
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 20px);transform:translate(-50%,10px);background:#16191d;color:#fff;padding:10px 16px;border-radius:12px;font-size:15px;opacity:0;pointer-events:none;transition:.2s;z-index:20;max-width:calc(100vw - 32px);text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<form id="login" novalidate>
+  <h1>FS Codes</h1>
+  <p class="mut">Einladungen verwalten. Nur für den Admin.</p>
+  <label>E-Mail<input id="lEmail" type="email" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
+  <label>Passwort<input id="lPw" type="password" autocomplete="current-password"></label>
+  <button class="btn primary" style="width:100%" id="lBtn" type="submit">Anmelden</button>
+  <p class="err" id="lErr"></p>
+</form>
+
+<div id="app">
+  <header><div><h1>FS Codes</h1><div class="who" id="who"></div></div><button id="logout" type="button">Abmelden</button></header>
+  <main>
+    <section class="card">
+      <div class="toggle">
+        <div><h2>Automatisch verschicken</h2><p class="small mut" style="margin:0" id="autoHint">Neue Anfragen bekommen sofort ihren Code. Bei mehr als 30 Anfragen pro Stunde pausiert die Automatik.</p></div>
+        <label class="sw" aria-label="Automatisch verschicken"><input type="checkbox" id="auto"><span></span></label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Code an E-Mail schicken</h2>
+      <p class="small mut">Schickt sofort einen Einladungscode an diese Adresse.</p>
+      <form id="send" class="row" novalidate>
+        <label>E-Mail<input id="sEmail" type="email" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <button class="btn primary" type="submit" id="sBtn">Senden</button>
+      </form>
+      <p class="err" id="sErr"></p>
+    </section>
+
+    <section class="card">
+      <h2>Anfragen <span class="n" id="nNeu" hidden></span></h2>
+      <div class="tabs" id="aTabs">
+        <button type="button" data-f="offen" class="on">Offen</button>
+        <button type="button" data-f="alle">Alle</button>
+        <button type="button" data-f="fehler">Fehler</button>
+      </div>
+      <div id="aList"><p class="empty">Lade…</p></div>
+    </section>
+
+    <section class="card">
+      <h2>Codes</h2>
+      <div class="tabs" id="cTabs">
+        <button type="button" data-f="alle" class="on">Alle</button>
+        <button type="button" data-f="offen">Offen</button>
+        <button type="button" data-f="eingeloest">Eingelöst</button>
+      </div>
+      <div id="cList"><p class="empty">Lade…</p></div>
+    </section>
+    <p class="small mut" style="text-align:center">Anfrageseite für Interessierte: <a id="reqLink" href="../anfrage/" style="color:var(--acc)">../anfrage/</a></p>
+  </main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script type="module">
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBi8vKQETOYjboNPN72zPrSsuZQLUGOKqI',
+  authDomain: 'projekt-fs.firebaseapp.com',
+  projectId: 'projekt-fs',
+  storageBucket: 'projekt-fs.firebasestorage.app',
+  messagingSenderId: '1009677457222',
+  appId: '1:1009677457222:web:c3eb3d2029ccc804503747'
+};
+const ADMIN_UID = '8Vm4gmz4WzbCMdHwZFsvsXYTIXP2';
+const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtCode = c => c && c.length === 8 ? c.slice(0, 4) + '-' + c.slice(4) : (c || '');
+const when = ts => { try { const d = ts && ts.toDate ? ts.toDate() : null; return d ? d.toLocaleString('de-DE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''; } catch { return ''; } };
+const STATUS = { neu: 'Neu', freigegeben: 'Freigegeben', sendet: 'Wird gesendet', verschickt: 'Verschickt', fehler: 'Fehler', abgelehnt: 'Abgelehnt', doppelt: 'Doppelt' };
+let fs = null, unsubs = [], anfragen = [], codes = [], names = {}, aFilter = 'offen', cFilter = 'alle';
+let toastT;
+function toast(m, ms = 2600) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), ms); }
+const errMsg = e => e && e.code === 'permission-denied' ? 'Keine Berechtigung – bist du mit dem Admin-Konto angemeldet?' : (e && e.message) || 'Unbekannter Fehler';
+
+async function connect() {
+  const [A, F, Au] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-firestore.js'), import(base + 'firebase-auth.js')]);
+  const app = A.initializeApp(FIREBASE_CONFIG);
+  fs = { F, Au, auth: Au.getAuth(app), db: F.getFirestore(app) };
+  Au.onAuthStateChanged(fs.auth, user => {
+    stop();
+    if (!user) { document.body.classList.remove('in'); return; }
+    if (user.uid !== ADMIN_UID) { document.body.classList.remove('in'); $('#lErr').textContent = 'Dieses Konto ist kein Admin.'; Au.signOut(fs.auth); return; }
+    document.body.classList.add('in');
+    $('#who').textContent = user.email || '';
+    start();
+  });
+}
+function stop() { for (const u of unsubs) u(); unsubs = []; }
+function start() {
+  const { F, db } = fs;
+  unsubs.push(F.onSnapshot(F.doc(db, 'einstellungen', 'codes'), s => { $('#auto').checked = !!(s.exists() && s.data().auto); }, e => toast(errMsg(e), 5000)));
+  unsubs.push(F.onSnapshot(F.query(F.collection(db, 'anfragen'), F.orderBy('createdAt', 'desc'), F.limit(200)), s => {
+    anfragen = s.docs.map(d => ({ id: d.id, ...d.data() })); renderA();
+  }, e => { $('#aList').innerHTML = `<p class="err">${esc(errMsg(e))}</p>`; }));
+  unsubs.push(F.onSnapshot(F.query(F.collection(db, 'einladungen'), F.orderBy('createdAt', 'desc'), F.limit(200)), s => {
+    codes = s.docs.map(d => ({ id: d.id, ...d.data() })); renderC(); loadNames();
+  }, e => { $('#cList').innerHTML = `<p class="err">${esc(errMsg(e))}</p>`; }));
+}
+async function loadNames() {
+  const { F, db } = fs;
+  const miss = [...new Set(codes.map(c => c.usedBy).filter(u => u && !(u in names)))];
+  if (!miss.length) return;
+  await Promise.all(miss.map(async u => { try { const s = await F.getDoc(F.doc(db, 'nutzer', u)); names[u] = s.exists() ? String(s.data().name || '') : ''; } catch { names[u] = ''; } }));
+  renderC();
+}
+function renderA() {
+  const open = anfragen.filter(a => a.status === 'neu');
+  const n = $('#nNeu'); n.hidden = !open.length; n.textContent = open.length;
+  const list = aFilter === 'offen' ? open : aFilter === 'fehler' ? anfragen.filter(a => a.status === 'fehler') : anfragen;
+  $('#aList').innerHTML = list.length ? list.map(a => {
+    const st = a.status || 'neu';
+    const info = [when(a.createdAt), a.code ? fmtCode(a.code) : '', a.auto ? 'automatisch' : '', a.note || '', a.error || ''].filter(Boolean).map(esc).join(' · ');
+    const acts = st === 'neu' ? `<button class="btn ok sm" data-a="ok" data-id="${esc(a.id)}">Freigeben</button><button class="btn sm" data-a="no" data-id="${esc(a.id)}">Ablehnen</button>`
+      : st === 'fehler' ? `<button class="btn sm" data-a="ok" data-id="${esc(a.id)}">Erneut senden</button>`
+      : st === 'verschickt' ? `<button class="btn sm" data-a="again" data-id="${esc(a.id)}">Nochmal</button>`
+      : st === 'abgelehnt' || st === 'doppelt' ? `<button class="btn sm" data-a="ok" data-id="${esc(a.id)}">Doch senden</button>` : '';
+    return `<div class="item"><div class="t"><b>${esc(a.email)}</b><small><span class="tag ${esc(st)}">${esc(STATUS[st] || st)}</span>${info}</small></div><div class="acts">${acts}</div></div>`;
+  }).join('') : `<p class="empty">${aFilter === 'offen' ? 'Keine offenen Anfragen.' : 'Keine Einträge.'}</p>`;
+}
+function renderC() {
+  const list = cFilter === 'offen' ? codes.filter(c => !c.usedBy) : cFilter === 'eingeloest' ? codes.filter(c => c.usedBy) : codes;
+  $('#cList').innerHTML = list.length ? list.map(c => {
+    const used = !!c.usedBy;
+    const who = used ? 'eingelöst von ' + (names[c.usedBy] || 'einem Konto') : 'offen';
+    return `<div class="item"><div class="t"><b class="code">${esc(fmtCode(c.id))}</b><small><span class="tag ${used ? 'eingeloest' : ''}">${esc(who)}</span>${esc([c.email || '', when(c.createdAt)].filter(Boolean).join(' · '))}</small></div>
+      <div class="acts">${used ? '' : `<button class="btn sm danger" data-a="delcode" data-id="${esc(c.id)}" aria-label="Code ${esc(fmtCode(c.id))} löschen">Löschen</button>`}</div></div>`;
+  }).join('') : '<p class="empty">Keine Codes.</p>';
+}
+
+async function setStatus(id, status) {
+  const { F, db } = fs;
+  try { await F.updateDoc(F.doc(db, 'anfragen', id), { status }); toast(status === 'freigegeben' ? 'Freigegeben – Code wird verschickt' : 'Abgelehnt'); }
+  catch (e) { toast(errMsg(e), 5000); }
+}
+async function sendTo(email) {
+  const { F, db } = fs;
+  await F.addDoc(F.collection(db, 'anfragen'), { email, createdAt: F.serverTimestamp(), status: 'freigegeben' });
+}
+
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-f]');
+  if (t && t.closest('#aTabs')) { aFilter = t.dataset.f; for (const b of document.querySelectorAll('#aTabs button')) b.classList.toggle('on', b === t); renderA(); return; }
+  if (t && t.closest('#cTabs')) { cFilter = t.dataset.f; for (const b of document.querySelectorAll('#cTabs button')) b.classList.toggle('on', b === t); renderC(); return; }
+  const b = e.target.closest('[data-a]'); if (!b) return;
+  const id = b.dataset.id, a = b.dataset.a;
+  if (a === 'ok') { b.disabled = true; await setStatus(id, 'freigegeben'); }
+  else if (a === 'no') { b.disabled = true; await setStatus(id, 'abgelehnt'); }
+  else if (a === 'again') {
+    const x = anfragen.find(y => y.id === id); if (!x) return;
+    if (!confirm(`Den Code nochmal an ${x.email} schicken?`)) return;
+    b.disabled = true;
+    try { await sendTo(x.email); toast('Wird nochmal verschickt'); } catch (er) { toast(errMsg(er), 5000); }
+  }
+  else if (a === 'delcode') {
+    if (!confirm(`Code ${fmtCode(id)} löschen? Er kann danach nicht mehr eingelöst werden.`)) return;
+    try { await fs.F.deleteDoc(fs.F.doc(fs.db, 'einladungen', id)); toast('Code gelöscht'); } catch (er) { toast(errMsg(er), 5000); }
+  }
+});
+$('#auto').addEventListener('change', async e => {
+  const on = e.target.checked;
+  try { await fs.F.setDoc(fs.F.doc(fs.db, 'einstellungen', 'codes'), { auto: on }, { merge: true }); toast(on ? 'Automatik an' : 'Automatik aus – du gibst Anfragen selbst frei'); }
+  catch (er) { e.target.checked = !on; toast(errMsg(er), 5000); }
+});
+$('#send').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('#sEmail').value.trim().toLowerCase(), err = $('#sErr'), btn = $('#sBtn');
+  err.textContent = '';
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'Bitte eine gültige E-Mail eingeben.'; return; }
+  btn.disabled = true;
+  try { await sendTo(email); $('#sEmail').value = ''; toast('Code wird an ' + email + ' verschickt'); }
+  catch (er) { err.textContent = errMsg(er); }
+  finally { btn.disabled = false; }
+});
+$('#login').addEventListener('submit', async e => {
+  e.preventDefault();
+  const err = $('#lErr'), btn = $('#lBtn');
+  if (!fs) { err.textContent = 'Noch keine Verbindung – kurz warten.'; return; }
+  btn.disabled = true; err.textContent = '';
+  try { await fs.Au.signInWithEmailAndPassword(fs.auth, $('#lEmail').value.trim(), $('#lPw').value); $('#lPw').value = ''; }
+  catch (er) { const c = er && er.code || ''; err.textContent = /invalid-credential|wrong-password|user-not-found|invalid-email/.test(c) ? 'E-Mail oder Passwort stimmt nicht.' : c.includes('too-many') ? 'Zu viele Versuche – kurz warten.' : 'Anmeldung fehlgeschlagen.'; }
+  finally { btn.disabled = false; }
+});
+$('#logout').addEventListener('click', () => fs && fs.Au.signOut(fs.auth));
+connect().catch(e => { $('#lErr').textContent = 'Verbindung fehlgeschlagen: ' + (e && e.message); });
+</script>
+</body>
+</html>

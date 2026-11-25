@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FS">
-<meta name="app-version" content="2026.11.25-12">
+<meta name="app-version" content="2026.11.25-13">
 <meta name="theme-color" content="#3a1f33">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -1119,11 +1119,12 @@ function setupMode(m, msg) {
   const email = `<label>E-Mail<input id="lgEmail" type="email" autocomplete="username" autocapitalize="off" spellcheck="false" inputmode="email"></label>`;
   const pw = nw => `<label>Passwort<input id="lgPw" type="password" autocomplete="${nw ? 'new-password' : 'current-password'}"${nw ? ' minlength="6" placeholder="mindestens 6 Zeichen"' : ''}></label>`;
   const age = `<label class="chk"><input type="checkbox" id="rgAge"><span>Ich bin mindestens 18 Jahre alt.</span></label>`;
+  const ask = '<br><a class="linkbtn" href="anfrage/" style="text-decoration:none;display:inline-block">Noch keinen Code? Zugang anfragen</a>';
   const sw = (t, m2, l) => `${t} <button type="button" class="linkbtn" data-act="setup-mode" data-m="${m2}">${l}</button>`;
   const V = {
     login: ['Eure gemeinsame Karte. Einmal anmelden – danach bleibt die App auf diesem Handy angemeldet, auch nach Updates.', email + pw(false), 'Anmelden', sw('Neu hier?', 'register', 'Mit Einladungscode registrieren')],
-    register: ['Registrieren geht im Moment nur mit einem Einladungscode.', code + name + email + pw(true) + age, 'Konto erstellen', sw('Schon ein Konto?', 'login', 'Anmelden')],
-    code: ['Dein Konto ist noch nicht freigeschaltet. Gib deinen Einladungscode ein, um loszulegen.', code + name + age, 'Freischalten', '<button type="button" class="linkbtn" data-act="setup-logout">Abmelden</button>']
+    register: ['Registrieren geht im Moment nur mit einem Einladungscode.', code + name + email + pw(true) + age, 'Konto erstellen', sw('Schon ein Konto?', 'login', 'Anmelden') + ask],
+    code: ['Dein Konto ist noch nicht freigeschaltet. Gib deinen Einladungscode ein, um loszulegen.', code + name + age, 'Freischalten', '<button type="button" class="linkbtn" data-act="setup-logout">Abmelden</button>' + ask]
   }[m];
   $('#setupIntro').textContent = V[0];
   $('#setupFields').innerHTML = V[1];

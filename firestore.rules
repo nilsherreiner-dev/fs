@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function email() { return request.auth.token.email.lower(); }
+    // Admin = Nils' Konto in projekt-fs (fest über die Nutzer-UID, nicht über die E-Mail)
+    function isAdmin() { return signedIn() && request.auth.uid == '8Vm4gmz4WzbCMdHwZFsvsXYTIXP2'; }
+    // Die ersten Konten: dürfen sich ohne Einladungscode ein Profil anlegen
+    function legacy() { return signedIn() && email() in ['nilshrnr@icloud.com', 'fritz.samira.28.08@gmail.com']; }
+
+    function validProfile(d) {
+      return d.keys().hasOnly(['name', 'bio', 'photo', 'code', 'createdAt', 'updatedAt'])
+        && d.name is string && d.name.size() >= 2 && d.name.size() <= 40
+        && (!('bio' in d) || (d.bio is string && d.bio.size() <= 300))
+        && (!('photo' in d) || (d.photo is string && d.photo.size() <= 200000));
+    }
+    function validRequest(d) {
+      return d.keys().hasOnly(['email', 'createdAt', 'status'])
+        && d.email is string && d.email.size() >= 6 && d.email.size() <= 120
+        && d.email.matches('[^@ ]+@[^@ ]+[.][^@ ]+')
+        && d.createdAt == request.time;
+    }
+
+    // Gemeinsame Karte (bis Version mit eigenen Karten: nur die ersten Konten)
+    match /karten/{karte}/pins/{pin} {
+      allow read, write: if legacy();
+    }
+
+    // Zugangs-Anfragen von der Anfrageseite (ohne Login); lesen und bearbeiten nur im Code-Tool
+    match /anfragen/{id} {
+      allow create: if validRequest(request.resource.data)
+        && (request.resource.data.status == 'neu' || (isAdmin() && request.resource.data.status == 'freigegeben'));
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Einstellungen des Code-Tools (z. B. Automatik an/aus)
+    match /einstellungen/{doc} {
+      allow read, write: if isAdmin();
+    }
+
+    // Einladungscodes: Dokument-ID = der Code. Angelegt nur vom Server.
+    match /einladungen/{code} {
+      allow get: if true;                 // einen bestimmten Code prüfen
+      allow list: if isAdmin();           // Übersicht im Code-Tool
+      allow delete: if isAdmin() && resource.data.usedBy == null;
+      // Einlösen: nur einmal, nur für sich selbst, nur zusammen mit dem eigenen Profil
+      allow update: if signedIn()
+        && resource.data.usedBy == null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedBy', 'usedAt'])
+        && request.resource.data.usedBy == request.auth.uid
+        && getAfter(/databases/$(database)/documents/nutzer/$(request.auth.uid)).data.code == code;
+    }
+
+    // Profile: für angemeldete Nutzer lesbar, nur selbst änderbar
+    match /nutzer/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid
+        && validProfile(request.resource.data)
+        && (
+          (legacy() && !('code' in request.resource.data))
+          || (request.resource.data.code is string
+              && get(/databases/$(database)/documents/einladungen/$(request.resource.data.code)).data.usedBy == null
+              && getAfter(/databases/$(database)/documents/einladungen/$(request.resource.data.code)).data.usedBy == uid)
+        );
+      allow update: if signedIn() && request.auth.uid == uid
+        && validProfile(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'bio', 'photo', 'updatedAt']);
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+  }
+}
