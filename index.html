@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FS">
-<meta name="app-version" content="2026.11.25-13">
+<meta name="app-version" content="2026.11.25-14">
 <meta name="theme-color" content="#3a1f33">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -207,6 +207,8 @@ body.needs-setup #setup{display:block}
 .chk input{width:22px;height:22px;flex:none;margin:1px 0 0;padding:0;-webkit-appearance:checkbox;appearance:auto;accent-color:var(--acc)}
 #setupSwitch{margin-top:4px;text-align:center}
 .choice .av.s{border-width:0}
+.inrow{display:flex;gap:8px;align-items:flex-end;margin-bottom:12px}.inrow label{flex:1;margin:0!important}.inrow .btn{flex:none}
+.tagx{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:1px 8px;margin-left:6px;background:var(--field);color:var(--mut);vertical-align:1px}
 </style>
 </head>
 <body>
@@ -273,8 +275,9 @@ const FIREBASE_CONFIG = {
   messagingSenderId: '1009677457222',
   appId: '1:1009677457222:web:c3eb3d2029ccc804503747'
 };
-const MAP_ID = 'main';        // es gibt genau eine gemeinsame Karte
+const LEGACY_MAP = 'main';    // die erste gemeinsame Karte von Nils und Samira
 const LEGACY = ['nilshrnr@icloud.com', 'fritz.samira.28.08@gmail.com']; // die zwei ersten Konten (brauchen keinen Code)
+const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 Zeichen, ohne I/O/0/1
 const APP_VERSION = (document.querySelector('meta[name=app-version]') || {}).content || '0';
 const ATTR = '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Daten von <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 const OFM = 'https://tiles.openfreemap.org/styles/';
@@ -409,6 +412,11 @@ let setupM = 'login', registering = false, me = { uid: '', profile: undefined },
 const isLegacy = () => LEGACY.includes(userEmail.toLowerCase());
 const normCode = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const fmtCode = c => c.length === 8 ? c.slice(0, 4) + '-' + c.slice(4) : c;
+const appUrl = () => location.origin + location.pathname.replace(/index\.html$/, '');
+let fitNext = false, leavingKid = '', pendingMem = '', joining = false;
+let karten = [], kartenUnsub = null, kartenKnown = false, curKid = LS.get('spots.karte', ''), curKarte = null, karteUnsub = null, onboardShown = false;
+const pinCol = () => fs.F.collection(fs.db, 'karten', curKid, 'pins');
+const myName = () => (me.profile && me.profile.name) || (userEmail.split('@')[0] || 'Ich').slice(0, 40);
 const hadView = LS.get('spots.view', null) !== null;
 
 /* ---------- UI helpers ---------- */
@@ -755,7 +763,8 @@ function listBodyHtml() {
 }
 function showList() {
   listLimit = LIST_STEP;
-  open(`<h2>Spots <span class="mut" id="lcount">${pins.size}</span></h2>
+  open(`<h2>${esc((curKarte && curKarte.name) || 'Spots')} <span class="mut" id="lcount">${pins.size}</span></h2>
+    <button class="linkbtn" data-act="karten" style="margin:-12px 0 0;min-height:36px">${karten.length > 1 ? 'Karte wechseln' : 'Karten verwalten'}</button>
     <div class="sec" style="margin-top:4px"><h3>Favoriten</h3><span class="mut" id="fcount">${favPins().length}/5</span></div>
     <div class="favs" id="favBox">${favHtml()}</div>
     <div class="searchrow2">
@@ -788,7 +797,7 @@ function toggleFav(id) {
   }
   const before = p.fav;
   p.fav = v; // sofort anzeigen …
-  fs.F.updateDoc(fs.F.doc(fs.col, id), { fav: v })
+  fs.F.updateDoc(fs.F.doc(pinCol(), id), { fav: v })
     .then(() => toast(v ? 'Favorit gespeichert' : 'Favorit entfernt'))   // … und erst bestätigen, wenn der Server es hat
     .catch(e => { p.fav = before; if (mode === 'list') refreshList(); toast('Favorit nicht gespeichert: ' + errHint(e), 7000); });
   if (mode === 'list') refreshList();
@@ -1008,7 +1017,9 @@ function showSettings() {
     : me.uid ? `<button class="choice" data-act="prof-edit"><span class="av s ph">+</span><span>Profil anlegen<small>Name und Bild für deine Bewertungen</small></span></button>` : '';
   open(`<h2>Einstellungen</h2>
     ${prof}
-    <h3 style="margin-top:${prof ? 18 : 4}px">Kartenstil</h3>
+    <h3 style="margin-top:${prof ? 18 : 4}px">Karten</h3>
+    <button class="choice" data-act="karten"><span class="c">${ico('map')}</span><span style="flex:1">${esc((curKarte && curKarte.name) || 'Keine Karte')}<small>${karten.length === 1 ? '1 Karte' : karten.length + ' Karten'} · wechseln, einladen, verwalten</small></span></button>
+    <h3>Kartenstil</h3>
     <div class="seg">${Object.entries(STYLES).map(([k, s]) => `<button class="btn${cur === k ? ' primary' : ''}" data-act="style" data-v="${k}">${s.name}</button>`).join('')}</div>
     <h3>Konto</h3>
     <p class="mut small" style="margin:0 0 4px">Angemeldet als <b>${esc(userEmail || '–')}</b></p>
@@ -1050,7 +1061,7 @@ async function toThumb(file) {
 }
 
 /* ---------- Firebase ---------- */
-const errHint = e => (e && e.code === 'permission-denied') ? (userEmail && !isLegacy() ? 'Eigene Karten kommen mit dem nächsten Update.' : 'Keine Berechtigung – Firestore-Regeln prüfen.') : ((e && e.message) || 'Unbekannter Fehler');
+const errHint = e => (e && e.code === 'permission-denied') ? 'Keine Berechtigung für diese Karte.' : ((e && e.message) || 'Unbekannter Fehler');
 function showLogin(msg) {
   // nach einer fehlgeschlagenen Registrierung bleibt das Formular samt Fehlermeldung stehen
   const keep = registering || (setupM === 'register' && document.body.classList.contains('needs-setup'));
@@ -1066,8 +1077,10 @@ function stopSync() {
 function startSync() {
   if (unsub || !fs) return;
   setStatus('Lade…');
-  unsub = fs.F.onSnapshot(fs.col, { includeMetadataChanges: true }, onSnap, err => {
-    if (err && err.code === 'permission-denied' && !isLegacy()) { setStatus('Noch keine Karte', 'off'); return; } // neue Konten: Karten kommen mit Version -12
+  if (!curKid) { setStatus('Keine Karte', 'off'); return; }
+  const kid = curKid;
+  unsub = fs.F.onSnapshot(pinCol(), { includeMetadataChanges: true }, onSnap, err => {
+    if (err && err.code === 'permission-denied') { lostKarte(kid); return; } // nicht mehr Mitglied oder Karte gelöscht
     setStatus('Fehler', 'err'); toast(errHint(err), 6000);
   });
 }
@@ -1083,11 +1096,11 @@ async function connect() {
     const auth = Au.getAuth(app);
     let db;
     try { db = F.initializeFirestore(app, { localCache: F.persistentLocalCache() }); } catch { db = F.getFirestore(app); }
-    fs = { F, Au, auth, db, col: F.collection(db, 'karten', MAP_ID, 'pins') };
+    fs = { F, Au, auth, db };
     Au.onAuthStateChanged(auth, user => {
       if (user && (!auth.currentUser || auth.currentUser.uid !== user.uid)) return; // veraltete Meldung (z. B. Konto gerade wieder gelöscht)
-      if (user) { userEmail = user.email || ''; if (!registering) document.body.classList.remove('needs-setup'); startSync(); watchProfile(user); }
-      else { userEmail = ''; stopSync(); stopProfile(); showLogin(); }
+      if (user) { userEmail = user.email || ''; if (!registering) document.body.classList.remove('needs-setup'); watchProfile(user); watchKarten(user); }
+      else { userEmail = ''; stopSync(); stopKarten(); stopProfile(); showLogin(); }
     });
   } catch (e) {
     setStatus('Offline', 'err');
@@ -1123,8 +1136,8 @@ function setupMode(m, msg) {
   const sw = (t, m2, l) => `${t} <button type="button" class="linkbtn" data-act="setup-mode" data-m="${m2}">${l}</button>`;
   const V = {
     login: ['Eure gemeinsame Karte. Einmal anmelden – danach bleibt die App auf diesem Handy angemeldet, auch nach Updates.', email + pw(false), 'Anmelden', sw('Neu hier?', 'register', 'Mit Einladungscode registrieren')],
-    register: ['Registrieren geht im Moment nur mit einem Einladungscode.', code + name + email + pw(true) + age, 'Konto erstellen', sw('Schon ein Konto?', 'login', 'Anmelden') + ask],
-    code: ['Dein Konto ist noch nicht freigeschaltet. Gib deinen Einladungscode ein, um loszulegen.', code + name + age, 'Freischalten', '<button type="button" class="linkbtn" data-act="setup-logout">Abmelden</button>' + ask]
+    register: ['Registrieren geht mit einem Einladungscode – oder mit dem Code von deinem Partner.', code + name + email + pw(true) + age, 'Konto erstellen', sw('Schon ein Konto?', 'login', 'Anmelden') + ask],
+    code: ['Dein Konto ist noch nicht freigeschaltet. Gib deinen Einladungscode oder den Code von deinem Partner ein.', code + name + age, 'Freischalten', '<button type="button" class="linkbtn" data-act="setup-logout">Abmelden</button>' + ask]
   }[m];
   $('#setupIntro').textContent = V[0];
   $('#setupFields').innerHTML = V[1];
@@ -1150,19 +1163,41 @@ function readInvite(noCode) {
   return { code, name };
 }
 async function checkInvite(code) {
+  // Einladungscode (Zugang zur App) oder Partner-Code (Zugang + Beitritt zu einer Karte)
   const { F } = fs;
-  let snap;
-  try { snap = await F.getDocFromServer(F.doc(fs.db, 'einladungen', code)); }
-  catch (e) { throw new Error(e && e.code === 'unavailable' ? 'Keine Internetverbindung.' : 'Der Code konnte nicht geprüft werden: ' + errHint(e)); }
-  if (!snap.exists()) throw new Error('Diesen Einladungscode gibt es nicht.');
-  if (snap.data().usedBy) throw new Error('Dieser Einladungscode wurde schon benutzt.');
+  let snap, link = null;
+  try {
+    snap = await F.getDocFromServer(F.doc(fs.db, 'einladungen', code));
+    if (!snap.exists()) link = await F.getDocFromServer(F.doc(fs.db, 'kartenEinladungen', code));
+  } catch (e) { throw new Error(e && e.code === 'unavailable' ? 'Keine Internetverbindung.' : 'Der Code konnte nicht geprüft werden: ' + errHint(e)); }
+  if (snap.exists()) {
+    if (snap.data().usedBy) throw new Error('Dieser Einladungscode wurde schon benutzt.');
+    return { type: 'zugang' };
+  }
+  if (!link || !link.exists()) throw new Error('Diesen Code gibt es nicht.');
+  const d = link.data() || {};
+  if (d.usedBy) throw new Error('Dieser Code wurde schon benutzt.');
+  return { type: 'karte', karte: d.karte, kartenName: String(d.kartenName || 'Karte').slice(0, 40) };
 }
-async function claimInvite(uid, code, name) {
+function addJoin(b, uid, code, info, name) {
+  // Mitglied werden + Code einlösen + Karte in die eigene Liste – die Regeln prüfen alles zusammen
+  const { F, db } = fs, ts = F.serverTimestamp();
+  b.set(F.doc(db, 'karten', info.karte, 'mitglieder', uid), { uid, name: name.slice(0, 40), rolle: 'member', via: code, joinedAt: ts });
+  b.update(F.doc(db, 'kartenEinladungen', code), { usedBy: uid, usedAt: ts });
+  b.set(F.doc(db, 'nutzer', uid, 'meineKarten', info.karte), { name: info.kartenName, joinedAt: ts });
+}
+async function claimInvite(uid, code, name, info) {
   // Profil anlegen und Code einlösen in einem Schritt – die Firestore-Regeln prüfen beides zusammen
-  const { F, db } = fs, b = F.writeBatch(db);
-  b.set(F.doc(db, 'nutzer', uid), { name, bio: '', photo: '', code, createdAt: F.serverTimestamp(), updatedAt: F.serverTimestamp() });
-  b.update(F.doc(db, 'einladungen', code), { usedBy: uid, usedAt: F.serverTimestamp() });
+  const { F, db } = fs, b = F.writeBatch(db), ts = F.serverTimestamp();
+  if (info && info.type === 'karte') {
+    b.set(F.doc(db, 'nutzer', uid), { name, bio: '', photo: '', link: code, createdAt: ts, updatedAt: ts });
+    addJoin(b, uid, code, info, name);
+  } else {
+    b.set(F.doc(db, 'nutzer', uid), { name, bio: '', photo: '', code, createdAt: ts, updatedAt: ts });
+    b.update(F.doc(db, 'einladungen', code), { usedBy: uid, usedAt: ts });
+  }
   await b.commit();
+  if (info && info.type === 'karte') { curKid = info.karte; LS.set('spots.karte', curKid); }
 }
 function authMsg(e) {
   const c = e && e.code || '';
@@ -1186,10 +1221,10 @@ async function register() {
   registering = true;
   let user = null;
   try {
-    if (!first) await checkInvite(inv.code);
+    const info = first ? null : await checkInvite(inv.code);
     user = (await fs.Au.createUserWithEmailAndPassword(fs.auth, email, pw)).user;
     if (first) { const { F } = fs; await F.setDoc(F.doc(fs.db, 'nutzer', user.uid), { name: inv.name, bio: '', photo: '', createdAt: F.serverTimestamp(), updatedAt: F.serverTimestamp() }); }
-    else await claimInvite(user.uid, inv.code, inv.name);
+    else await claimInvite(user.uid, inv.code, inv.name, info);
     $('#lgPw').value = '';
     registering = false;
     document.body.classList.remove('needs-setup');
@@ -1205,8 +1240,8 @@ async function redeem() {
   let inv; try { inv = readInvite(); } catch (e) { err.textContent = e.message; return; }
   err.textContent = ''; setupBusy(true, 'Wird freigeschaltet…');
   try {
-    await checkInvite(inv.code);
-    await claimInvite(user.uid, inv.code, inv.name);
+    const info = await checkInvite(inv.code);
+    await claimInvite(user.uid, inv.code, inv.name, info);
     document.body.classList.remove('needs-setup');
     toast(`Willkommen, ${inv.name}!`, 3500);
   } catch (e) { err.textContent = authMsg(e); }
@@ -1225,11 +1260,12 @@ function watchProfile(user) {
       const x = snap.data() || {};
       me.profile = { name: String(x.name || '').slice(0, 40), bio: String(x.bio || '').slice(0, 300), photo: okPhoto(x.photo) ? x.photo : '' };
       if (setupM === 'code' && document.body.classList.contains('needs-setup')) { document.body.classList.remove('needs-setup'); setupMode('login'); }
+      maybeOnboard();
       return;
     }
     if (snap.metadata.fromCache || registering) return; // erst entscheiden, wenn der Server geantwortet hat
     me.profile = null;
-    if (isLegacy()) { if (!mode && !profPrompted) { profPrompted = true; showProfileForm(true); } }
+    if (isLegacy()) { maybeOnboard(); if (!mode && !profPrompted) { profPrompted = true; showProfileForm(true); } }
     else { document.body.classList.add('needs-setup'); setupMode('code'); setStatus('Nicht freigeschaltet', 'off'); }
   }, e => console.warn('Profil', e));
 }
@@ -1281,6 +1317,11 @@ async function deleteAccount() {
   try {
     await Au.reauthenticateWithCredential(user, Au.EmailAuthProvider.credential(user.email, pw));
     if (profUnsub) { profUnsub(); profUnsub = null; }
+    const mine = karten.slice(); stopSync(); stopKarten();
+    for (const k of mine) { // Mitgliedschaften aufräumen
+      try { await F.deleteDoc(F.doc(fs.db, 'karten', k.id, 'mitglieder', user.uid)); } catch {}
+      try { await F.deleteDoc(F.doc(fs.db, 'nutzer', user.uid, 'meineKarten', k.id)); } catch {}
+    }
     await F.deleteDoc(F.doc(fs.db, 'nutzer', user.uid));
     await user.delete();
     closeSheet(); toast('Dein Konto wurde gelöscht', 4000);
@@ -1288,8 +1329,219 @@ async function deleteAccount() {
     const c = e && e.code || '';
     err.textContent = /wrong-password|invalid-credential/.test(c) ? 'Das Passwort stimmt nicht.' : authMsg(e);
     btn.disabled = false; btn.textContent = 'Endgültig löschen';
-    if (!profUnsub && fs.auth.currentUser) watchProfile(fs.auth.currentUser);
+    if (!profUnsub && fs.auth.currentUser) { watchProfile(fs.auth.currentUser); if (!kartenUnsub) watchKarten(fs.auth.currentUser); }
   }
+}
+
+/* ---------- Karten: eigene Karten, Mitglieder, Partner-Codes ---------- */
+const msOf = t => { try { return t && t.toMillis ? t.toMillis() : Date.now(); } catch { return Date.now(); } };
+function stopKarten() {
+  if (kartenUnsub) { kartenUnsub(); kartenUnsub = null; }
+  if (karteUnsub) { karteUnsub(); karteUnsub = null; }
+  karten = []; kartenKnown = false; curKarte = null; onboardShown = false;
+}
+function watchKarten(user) {
+  stopKarten();
+  const { F } = fs;
+  kartenUnsub = F.onSnapshot(F.collection(fs.db, 'nutzer', user.uid, 'meineKarten'), { includeMetadataChanges: true }, snap => {
+    karten = snap.docs.map(d => { const x = d.data() || {}; return { id: d.id, name: String(x.name || 'Karte').slice(0, 40), t: msOf(x.joinedAt) }; }).sort((a, b) => a.t - b.t);
+    if (snap.metadata.fromCache && !karten.length) return; // erst entscheiden, wenn der Server geantwortet hat
+    kartenKnown = true;
+    if (!karten.some(k => k.id === curKid)) {
+      if (karten.length) switchKarte(karten[0].id, true);
+      else { stopSync(); curKid = ''; curKarte = null; if (karteUnsub) { karteUnsub(); karteUnsub = null; } setStatus('Keine Karte', 'off'); maybeOnboard(); }
+    } else if (!unsub) switchKarte(curKid, true);
+    if (mode === 'karten') showKarten();
+  }, e => console.warn('Karten', e));
+}
+function maybeOnboard() {
+  if (!kartenKnown || karten.length || !me.uid || joining) return;
+  if (isLegacy()) { joinLegacy(); return; }              // Nils & Samira: bisherige Karte übernehmen
+  if (!me.profile) return;                               // erst Profil bzw. Freischaltung
+  if (!onboardShown && !mode) { onboardShown = true; showOnboard(); }
+}
+async function joinLegacy() {
+  if (joining) return; joining = true;
+  const { F, db } = fs, uid = me.uid, ts = F.serverTimestamp();
+  try {
+    const kref = F.doc(db, 'karten', LEGACY_MAP);
+    const k = await F.getDocFromServer(kref);
+    const b = F.writeBatch(db);
+    let name = 'Unsere Karte';
+    if (!k.exists()) b.set(kref, { name, owner: uid, createdAt: ts });
+    else name = String(k.data().name || name).slice(0, 40);
+    b.set(F.doc(db, 'karten', LEGACY_MAP, 'mitglieder', uid), { uid, name: myName(), rolle: k.exists() ? 'member' : 'owner', joinedAt: ts });
+    b.set(F.doc(db, 'nutzer', uid, 'meineKarten', LEGACY_MAP), { name, joinedAt: ts });
+    await b.commit();
+    curKid = LEGACY_MAP; LS.set('spots.karte', curKid);
+  } catch (e) { console.warn(e); toast('Eure bisherige Karte konnte nicht übernommen werden: ' + errHint(e), 6000); }
+  finally { joining = false; }
+}
+function switchKarte(kid, quiet) {
+  if (kid !== curKid || !unsub) {
+    stopSync(); curKid = kid; LS.set('spots.karte', kid);
+    const k = karten.find(x => x.id === kid);
+    curKarte = { id: kid, name: k ? k.name : '', owner: '' };
+    fitNext = !quiet;
+    watchKarte(); startSync();
+  }
+  if (!quiet) { const k = karten.find(x => x.id === kid); if (k) toast('Karte „' + k.name + '“'); }
+}
+function watchKarte() {
+  if (karteUnsub) { karteUnsub(); karteUnsub = null; }
+  const kid = curKid, { F } = fs;
+  karteUnsub = F.onSnapshot(F.doc(fs.db, 'karten', kid), s => {
+    if (kid !== curKid || !s.exists()) return;
+    const d = s.data() || {};
+    curKarte = { id: kid, name: String(d.name || 'Karte').slice(0, 40), owner: d.owner || '' };
+    const mine = karten.find(k => k.id === kid);
+    if (mine && mine.name !== curKarte.name) F.updateDoc(F.doc(fs.db, 'nutzer', me.uid, 'meineKarten', kid), { name: curKarte.name }).catch(() => {});
+    if (!firstSnap) { const n = pins.size; setStatus(`${curKarte.name.slice(0, 18)} · ${n} ${n === 1 ? 'Spot' : 'Spots'}`, 'ok'); }
+    if (mode === 'karte') showKarte(true);
+  }, () => {});
+}
+async function lostKarte(kid) {
+  stopSync();
+  if (leavingKid === kid) { leavingKid = ''; } else { setStatus('Kein Zugriff', 'off'); toast('Du hast keinen Zugriff mehr auf diese Karte.', 5000); }
+  try { await fs.F.deleteDoc(fs.F.doc(fs.db, 'nutzer', me.uid, 'meineKarten', kid)); } catch {}
+}
+const newKarteForm = (val = '') => `<form id="newKarteForm" class="form inrow"><label>Name der neuen Karte<input id="nkName" maxlength="40" value="${esc(val)}" placeholder="z. B. Wir zwei" autocomplete="off"></label><button class="btn primary" type="submit">Anlegen</button></form>`;
+const joinForm = () => `<form id="joinForm" class="form inrow"><label>Code von deinem Partner<input id="jCode" maxlength="12" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX"></label><button class="btn" type="submit">Beitreten</button></form>`;
+function showOnboard() {
+  open(`<h2>Deine erste Karte</h2>
+    <p class="mut">Leg eine eigene Karte an, zum Beispiel für dich und deinen Partner. Hat dein Partner schon eine Karte? Dann tritt ihr mit seinem Code bei.</p>
+    ${newKarteForm('Wir zwei')}
+    ${joinForm()}`, 'onboard');
+}
+function showKarten() {
+  open(`<h2>Karten</h2>
+    ${karten.length ? karten.map(k => `<div class="item"><button class="item-main" data-act="karte-open" data-id="${esc(k.id)}"><span class="sico" style="background:${k.id === curKid ? 'var(--acc)' : 'var(--mut)'}">${ico('map')}</span><span class="t"><b>${esc(k.name)}</b><small>${k.id === curKid ? 'Gerade geöffnet' : 'Antippen zum Öffnen'}</small></span></button><button class="pinbtn" data-act="karte-manage" data-id="${esc(k.id)}" aria-label="${esc(k.name)} verwalten" style="color:var(--mut)">${ico('gear')}</button></div>`).join('') : '<p class="hint">Du hast noch keine Karte.</p>'}
+    <h3>Neue Karte</h3>
+    ${newKarteForm()}
+    <h3>Einer Karte beitreten</h3>
+    ${joinForm()}`, 'karten');
+}
+async function createKarte(raw) {
+  const name = String(raw || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+  if (!name) { toast('Bitte gib der Karte einen Namen'); return; }
+  const { F, db } = fs, uid = me.uid, ts = F.serverTimestamp();
+  const ref = F.doc(F.collection(db, 'karten')), kid = ref.id, b = F.writeBatch(db);
+  b.set(ref, { name, owner: uid, createdAt: ts });
+  b.set(F.doc(db, 'karten', kid, 'mitglieder', uid), { uid, name: myName(), rolle: 'owner', joinedAt: ts });
+  b.set(F.doc(db, 'nutzer', uid, 'meineKarten', kid), { name, joinedAt: ts });
+  try { await b.commit(); closeSheet(); switchKarte(kid); toast(`Karte „${name}“ angelegt – lade deinen Partner unter Einstellungen › Karten ein`, 4500); }
+  catch (e) { toast('Karte nicht angelegt: ' + errHint(e), 6000); }
+}
+async function joinWithCode(raw) {
+  const code = normCode(raw);
+  if (code.length !== 8) { toast('Bitte den Code vollständig eingeben (8 Zeichen)'); return; }
+  const { F, db } = fs;
+  try {
+    const s = await F.getDocFromServer(F.doc(db, 'kartenEinladungen', code));
+    if (!s.exists()) { toast('Diesen Code gibt es nicht', 4000); return; }
+    const d = s.data() || {}, info = { karte: d.karte, kartenName: String(d.kartenName || 'Karte').slice(0, 40) };
+    if (karten.some(k => k.id === d.karte)) { closeSheet(); switchKarte(d.karte); toast('Du bist schon auf dieser Karte'); return; }
+    if (d.usedBy) { toast('Dieser Code wurde schon benutzt', 4000); return; }
+    const b = F.writeBatch(db); addJoin(b, me.uid, code, info, myName()); await b.commit();
+    closeSheet(); switchKarte(info.karte, true); toast(`Willkommen auf „${info.kartenName}“`, 3500);
+  } catch (e) { toast('Beitreten fehlgeschlagen: ' + (e && e.code === 'permission-denied' ? 'Der Code wurde gerade schon benutzt.' : errHint(e)), 6000); }
+}
+function showKarte(keep) {
+  if (!curKarte) return;
+  const y = keep ? $('#sheet').scrollTop : 0;
+  const owner = curKarte.owner === me.uid;
+  open(`<h2>${esc(curKarte.name)}</h2>
+    ${owner ? `<form id="renameForm" class="form inrow"><label>Name der Karte<input id="rkName" maxlength="40" value="${esc(curKarte.name)}" autocomplete="off"></label><button class="btn" type="submit">Speichern</button></form>` : ''}
+    <h3>Mitglieder</h3><div id="memList"><p class="small mut">Lade…</p></div>
+    <h3>Partner einladen</h3>
+    <p class="small mut" style="margin:0 0 8px">Erstelle einen Code und schick ihn deinem Partner. Wer noch kein Konto hat, kann sich damit direkt registrieren. Jeder Code gilt einmal.</p>
+    <button class="btn primary wide" data-act="link-new">Code erstellen</button>
+    <div id="linkList"></div>
+    <h3>${owner ? 'Karte löschen' : 'Karte verlassen'}</h3>
+    <button class="btn danger wide" data-act="${owner ? 'karte-del' : 'karte-leave'}">${owner ? 'Karte mit allen Spots löschen' : 'Karte verlassen'}</button>
+    <button class="btn wide" data-act="karten" style="margin-top:10px">Alle Karten</button>`, 'karte');
+  if (keep) $('#sheet').scrollTop = y;
+  loadMembers(); loadLinks();
+}
+async function loadMembers() {
+  const box = () => $('#memList'), { F } = fs, kid = curKid;
+  try {
+    const s = await F.getDocs(F.collection(fs.db, 'karten', kid, 'mitglieder'));
+    if (mode !== 'karte' || kid !== curKid || !box()) return;
+    const owner = curKarte && curKarte.owner === me.uid;
+    const list = s.docs.map(d => ({ uid: d.id, ...(d.data() || {}) })).sort((a, b) => msOf(a.joinedAt) - msOf(b.joinedAt));
+    box().innerHTML = list.map(m => `<div class="item"><span class="t"><b>${esc(m.name || 'Mitglied')}${m.uid === me.uid ? '<span class="tagx">du</span>' : ''}${m.rolle === 'owner' ? '<span class="tagx">Ersteller</span>' : ''}</b></span>${owner && m.uid !== me.uid ? `<button class="btn danger" style="min-height:40px;padding:0 12px;font-size:14px" data-act="mem-del" data-id="${esc(m.uid)}">Entfernen</button>` : ''}</div>`).join('') || '<p class="small mut">Keine Mitglieder.</p>';
+  } catch (e) { if (box()) box().innerHTML = `<p class="small err">${esc(errHint(e))}</p>`; }
+}
+async function loadLinks() {
+  const box = () => $('#linkList'), { F } = fs, kid = curKid;
+  try {
+    const s = await F.getDocs(F.query(F.collection(fs.db, 'kartenEinladungen'), F.where('by', '==', me.uid), F.where('karte', '==', kid)));
+    if (mode !== 'karte' || kid !== curKid || !box()) return;
+    const open_ = s.docs.filter(d => !(d.data() || {}).usedBy).map(d => d.id);
+    box().innerHTML = open_.length ? '<p class="small mut" style="margin:12px 0 0">Offene Codes</p>' + open_.map(c => `<div class="item"><span class="t"><b style="letter-spacing:.06em">${esc(fmtCode(c))}</b><small>noch nicht benutzt</small></span><button class="btn" style="min-height:40px;padding:0 14px;font-size:15px" data-act="link-share" data-c="${esc(c)}">Teilen</button><button class="pinbtn" data-act="link-del" data-c="${esc(c)}" aria-label="Code ${esc(fmtCode(c))} löschen" style="color:var(--mut)">${ico('x')}</button></div>`).join('') : '';
+  } catch (e) { if (box()) box().innerHTML = `<p class="small err">${esc(errHint(e))}</p>`; }
+}
+async function newLink() {
+  if (!curKarte) return;
+  const { F } = fs, r = new Uint32Array(8); crypto.getRandomValues(r);
+  const code = [...r].map(n => CODE_ABC[n % 32]).join('');
+  try {
+    await F.setDoc(F.doc(fs.db, 'kartenEinladungen', code), { karte: curKid, kartenName: curKarte.name, by: me.uid, byName: myName(), createdAt: F.serverTimestamp(), usedBy: null });
+    toast(`Code ${fmtCode(code)} erstellt – mit „Teilen“ verschicken`, 4000);
+  } catch (e) { toast('Code nicht erstellt: ' + errHint(e), 6000); }
+  if (mode === 'karte') loadLinks();
+}
+function shareLink(code) {
+  const name = curKarte ? curKarte.name : 'unsere Karte';
+  const text = `Ich lade dich zu unserer Karte „${name}“ in FS ein.\n\nDein Code: ${fmtCode(code)}\n\nNoch kein Konto? Öffne den Link in Safari, wähle über Teilen „Zum Home-Bildschirm“, öffne FS und registriere dich mit dem Code.\nSchon dabei? In FS unter Einstellungen › Karten den Code eingeben.\n\n${appUrl()}`;
+  if (navigator.share) navigator.share({ text }).catch(() => {});
+  else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast('Einladung kopiert')).catch(() => toast(fmtCode(code), 6000));
+  else toast(fmtCode(code), 6000);
+}
+async function delLink(code) {
+  try { await fs.F.deleteDoc(fs.F.doc(fs.db, 'kartenEinladungen', code)); toast('Code gelöscht'); } catch (e) { toast('Löschen fehlgeschlagen: ' + errHint(e), 6000); }
+  if (mode === 'karte') loadLinks();
+}
+async function renameKarte(raw) {
+  const name = String(raw || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+  if (!name || !curKarte) return;
+  const { F } = fs;
+  try {
+    await F.updateDoc(F.doc(fs.db, 'karten', curKid), { name });
+    await F.updateDoc(F.doc(fs.db, 'nutzer', me.uid, 'meineKarten', curKid), { name }).catch(() => {});
+    toast('Name gespeichert');
+  } catch (e) { toast('Nicht gespeichert: ' + errHint(e), 6000); }
+}
+async function removeMember(uid) {
+  try { await fs.F.deleteDoc(fs.F.doc(fs.db, 'karten', curKid, 'mitglieder', uid)); toast('Mitglied entfernt'); }
+  catch (e) { toast('Entfernen fehlgeschlagen: ' + errHint(e), 6000); }
+  showKarte();
+}
+async function leaveKarte() {
+  const kid = curKid, { F } = fs;
+  leavingKid = kid; closeSheet();
+  try {
+    await F.deleteDoc(F.doc(fs.db, 'karten', kid, 'mitglieder', me.uid));
+    await F.deleteDoc(F.doc(fs.db, 'nutzer', me.uid, 'meineKarten', kid));
+    toast('Du hast die Karte verlassen');
+  } catch (e) { leavingKid = ''; toast('Verlassen fehlgeschlagen: ' + errHint(e), 6000); }
+}
+async function deleteKarte() {
+  const kid = curKid, { F, db } = fs;
+  closeSheet(); toast('Karte wird gelöscht…', 8000);
+  try {
+    const del = async refs => { for (let i = 0; i < refs.length; i += 400) { const b = F.writeBatch(db); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit(); } };
+    await del((await F.getDocs(F.collection(db, 'karten', kid, 'pins'))).docs.map(d => d.ref));
+    const mem = (await F.getDocs(F.collection(db, 'karten', kid, 'mitglieder'))).docs;
+    await del(mem.filter(d => d.id !== me.uid).map(d => d.ref));
+    await del((await F.getDocs(F.query(F.collection(db, 'kartenEinladungen'), F.where('by', '==', me.uid), F.where('karte', '==', kid)))).docs.map(d => d.ref));
+    leavingKid = kid; stopSync();
+    await F.deleteDoc(F.doc(db, 'karten', kid));
+    await F.deleteDoc(F.doc(db, 'karten', kid, 'mitglieder', me.uid));
+    await F.deleteDoc(F.doc(db, 'nutzer', me.uid, 'meineKarten', kid));
+    toast('Karte gelöscht');
+  } catch (e) { toast('Löschen fehlgeschlagen: ' + errHint(e), 6000); if (!unsub && curKid === kid) startSync(); }
 }
 
 /* ---------- Auto-Update ---------- */
@@ -1305,7 +1557,7 @@ async function checkUpdate(manual) {
   } catch { if (manual) toast('Keine Verbindung'); }
 }
 function applyUpdate() {
-  if (!updatePending || mode === 'form' || mode === 'pedit' || mode === 'delacc' || placing) return; // nie mitten im Bearbeiten neu laden
+  if (!updatePending || ['form', 'pedit', 'delacc', 'karte', 'karten', 'onboard'].includes(mode) || placing) return; // nie mitten im Bearbeiten neu laden
   toast('Neue Version wird geladen…');
   const v = updatePending; updatePending = null;
   setTimeout(() => location.replace(location.pathname + '?v=' + encodeURIComponent(v)), 700);
@@ -1321,8 +1573,9 @@ function onSnap(snap) {
   for (const id of [...pins.keys()]) if (!seen.has(id)) { pins.delete(id); const m = markers.get(id); if (m) m.remove(); markers.delete(id); }
   const n = pins.size;
   const pend = snap.metadata.hasPendingWrites, off = snap.metadata.fromCache;
-  setStatus(`${n} ${n === 1 ? 'Spot' : 'Spots'}${off ? ' · offline' : pend ? ' · speichert…' : ''}`, off || pend ? 'off' : 'ok');
-  if (firstSnap) { firstSnap = false; if (n && !hadView) fitAll(); if (SUG.show) setTimeout(() => loadSuggestions(false), 800); }
+  const kn = curKarte && curKarte.name ? curKarte.name.slice(0, 18) + ' · ' : '';
+  setStatus(`${kn}${n} ${n === 1 ? 'Spot' : 'Spots'}${off ? ' · offline' : pend ? ' · speichert…' : ''}`, off || pend ? 'off' : 'ok');
+  if (firstSnap) { firstSnap = false; if (n && (!hadView || fitNext)) fitAll(); fitNext = false; if (SUG.show) setTimeout(() => loadSuggestions(false), 800); }
   if (mode === 'profile' && openId) {
     if (!pins.has(openId)) { closeSheet(); toast('Dieser Spot wurde gelöscht'); }
     else if (snap.docChanges({ includeMetadataChanges: false }).some(c => c.doc.id === openId)) { const y = $('#sheet').scrollTop; showProfile(openId, true); $('#sheet').scrollTop = y; }
@@ -1338,15 +1591,15 @@ function savePin() {
   const { F } = fs;
   const data = { name: d.name, desc: d.desc, address: d.address, lat: d.lat, lng: d.lng, photo: d.photo || '', r: { g: clampR(d.r.g), a: clampR(d.r.a), u: clampR(d.r.u) }, rs: 10, updatedAt: F.serverTimestamp() };
   let id = d.id, pr;
-  if (id) pr = F.updateDoc(F.doc(fs.col, id), data);
-  else { const ref = F.doc(fs.col); id = ref.id; data.createdAt = F.serverTimestamp(); pr = F.setDoc(ref, data); }
+  if (id) pr = F.updateDoc(F.doc(pinCol(), id), data);
+  else { const ref = F.doc(pinCol()); id = ref.id; data.createdAt = F.serverTimestamp(); data.by = me.uid; pr = F.setDoc(ref, data); }
   pr.catch(e => toast('Speichern fehlgeschlagen: ' + errHint(e), 6000));
   closeSheet();
   setTimeout(() => { if (pins.has(id)) showProfile(id); }, 250);
 }
 function deletePin(id) {
   if (!fs || !id) return;
-  fs.F.deleteDoc(fs.F.doc(fs.col, id)).catch(e => toast('Löschen fehlgeschlagen: ' + errHint(e), 6000));
+  fs.F.deleteDoc(fs.F.doc(pinCol(), id)).catch(e => toast('Löschen fehlgeschlagen: ' + errHint(e), 6000));
   closeSheet(); toast('Spot gelöscht');
 }
 
@@ -1359,7 +1612,7 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act;
   if (a === 'close') closeSheet();
-  else if (a === 'add') showAdd();
+  else if (a === 'add') { if (curKid) showAdd(); else showOnboard(); }
   else if (a === 'add-search') showSearch();
   else if (a === 'add-here') {
     toast('Standort wird ermittelt…');
@@ -1400,6 +1653,18 @@ document.addEventListener('click', e => {
   else if (a === 'prof-rmphoto') { syncPDraft(); pdraft.photo = ''; showProfileForm(); }
   else if (a === 'acc-del') confirmBox('Konto löschen?', 'Dein Profil und dein Login werden gelöscht. Spots auf gemeinsamen Karten bleiben für die anderen erhalten. Das lässt sich nicht rückgängig machen.', 'Weiter', 'acc-del-pw');
   else if (a === 'acc-del-pw') showDeleteForm();
+  else if (a === 'karten') showKarten();
+  else if (a === 'karte-open') { closeSheet(); switchKarte(b.dataset.id); }
+  else if (a === 'karte-manage') { if (b.dataset.id !== curKid) switchKarte(b.dataset.id, true); showKarte(); }
+  else if (a === 'link-new') newLink();
+  else if (a === 'link-share') shareLink(b.dataset.c);
+  else if (a === 'link-del') delLink(b.dataset.c);
+  else if (a === 'mem-del') { pendingMem = b.dataset.id; confirmBox('Mitglied entfernen?', 'Die Person sieht die Karte danach nicht mehr. Ihre Spots bleiben auf der Karte.', 'Entfernen', 'mem-del-yes'); }
+  else if (a === 'mem-del-yes') removeMember(pendingMem);
+  else if (a === 'karte-leave') confirmBox('Karte verlassen?', 'Du siehst die Karte und ihre Spots danach nicht mehr. Zurück kommst du nur mit einem neuen Code.', 'Verlassen', 'karte-leave-yes');
+  else if (a === 'karte-leave-yes') leaveKarte();
+  else if (a === 'karte-del') confirmBox('Karte löschen?', 'Die Karte und alle ihre Spots werden für alle Mitglieder gelöscht. Das lässt sich nicht rückgängig machen.', 'Endgültig löschen', 'karte-del-yes');
+  else if (a === 'karte-del-yes') deleteKarte();
   else if (a === 'edit') {
     const p = pins.get(openId); if (!p) return;
     const id = openId;
@@ -1431,6 +1696,9 @@ document.addEventListener('submit', e => {
   else if (e.target.id === 'setupForm') submitSetup();
   else if (e.target.id === 'profForm') saveProfile();
   else if (e.target.id === 'delForm') deleteAccount();
+  else if (e.target.id === 'newKarteForm') createKarte($('#nkName').value);
+  else if (e.target.id === 'joinForm') joinWithCode($('#jCode').value);
+  else if (e.target.id === 'renameForm') renameKarte($('#rkName').value);
 });
 document.addEventListener('change', async e => {
   if (e.target.id === 'sugTog') {
