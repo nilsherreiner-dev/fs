@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FS">
-<meta name="app-version" content="2026.11.25-15">
+<meta name="app-version" content="2026.11.25-16">
 <meta name="theme-color" content="#3a1f33">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -1080,7 +1080,7 @@ function startSync() {
   if (!curKid) { setStatus('Keine Karte', 'off'); return; }
   const kid = curKid;
   unsub = fs.F.onSnapshot(pinCol(), { includeMetadataChanges: true }, onSnap, err => {
-    if (err && err.code === 'permission-denied') { lostKarte(kid); return; } // nicht mehr Mitglied oder Karte gelöscht
+    if (err && err.code === 'permission-denied') { pinDenied(kid); return; } // vielleicht nur kurz – sonst nicht mehr Mitglied
     setStatus('Fehler', 'err'); toast(errHint(err), 6000);
   });
 }
@@ -1099,7 +1099,13 @@ async function connect() {
     fs = { F, Au, auth, db };
     Au.onAuthStateChanged(auth, user => {
       if (user && (!auth.currentUser || auth.currentUser.uid !== user.uid)) return; // veraltete Meldung (z. B. Konto gerade wieder gelöscht)
-      if (user) { userEmail = user.email || ''; if (!registering) document.body.classList.remove('needs-setup'); watchProfile(user); watchKarten(user); }
+      if (user) {
+        userEmail = user.email || ''; if (!registering) document.body.classList.remove('needs-setup');
+        // erst wenn das Login-Token bereit ist, Daten abonnieren – sonst lehnt Firestore die ersten Abfragen ab
+        Promise.resolve(user.getIdToken ? user.getIdToken() : null).catch(() => {}).then(() => {
+          if (auth.currentUser && auth.currentUser.uid === user.uid) { watchProfile(user); watchKarten(user); }
+        });
+      }
       else { userEmail = ''; stopSync(); stopKarten(); stopProfile(); curKid = ''; LS.del('spots.karte'); showLogin(); }
     });
   } catch (e) {
@@ -1412,6 +1418,14 @@ function watchKarte() {
     if (mode === 'karte') showKarte(true);
   }, () => {});
 }
+const pinFails = {};
+function pinDenied(kid) {
+  unsub = null;
+  if (leavingKid === kid) { lostKarte(kid); return; }
+  const n = (pinFails[kid] || 0) + 1; pinFails[kid] = n;
+  if (n <= 3) { setStatus('Verbinde…', 'off'); setTimeout(() => { if (curKid === kid && !unsub) startSync(); }, 2000 * n); return; }
+  pinFails[kid] = 0; lostKarte(kid);
+}
 async function lostKarte(kid) {
   stopSync();
   if (leavingKid === kid) { leavingKid = ''; } else { setStatus('Kein Zugriff', 'off'); toast('Du hast keinen Zugriff mehr auf diese Karte.', 5000); }
@@ -1575,6 +1589,7 @@ function applyUpdate() {
   setTimeout(() => location.replace(location.pathname + '?v=' + encodeURIComponent(v)), 700);
 }
 function onSnap(snap) {
+  if (curKid) pinFails[curKid] = 0;
   const seen = new Set();
   snap.forEach(d => {
     const x = d.data() || {};
