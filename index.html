@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FS">
-<meta name="app-version" content="2026.11.25-14">
+<meta name="app-version" content="2026.11.25-15">
 <meta name="theme-color" content="#3a1f33">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -1018,7 +1018,7 @@ function showSettings() {
   open(`<h2>Einstellungen</h2>
     ${prof}
     <h3 style="margin-top:${prof ? 18 : 4}px">Karten</h3>
-    <button class="choice" data-act="karten"><span class="c">${ico('map')}</span><span style="flex:1">${esc((curKarte && curKarte.name) || 'Keine Karte')}<small>${karten.length === 1 ? '1 Karte' : karten.length + ' Karten'} · wechseln, einladen, verwalten</small></span></button>
+    <button class="choice" data-act="karten"><span class="c">${ico('map')}</span><span style="flex:1">${esc((curKarte && curKarte.name) || 'Keine Karte')}<small>${karten.length === 0 ? 'Karte anlegen oder beitreten' : karten.length === 1 ? '1 Karte · einladen, verwalten' : karten.length + ' Karten · wechseln, einladen, verwalten'}</small></span></button>
     <h3>Kartenstil</h3>
     <div class="seg">${Object.entries(STYLES).map(([k, s]) => `<button class="btn${cur === k ? ' primary' : ''}" data-act="style" data-v="${k}">${s.name}</button>`).join('')}</div>
     <h3>Konto</h3>
@@ -1100,7 +1100,7 @@ async function connect() {
     Au.onAuthStateChanged(auth, user => {
       if (user && (!auth.currentUser || auth.currentUser.uid !== user.uid)) return; // veraltete Meldung (z. B. Konto gerade wieder gelöscht)
       if (user) { userEmail = user.email || ''; if (!registering) document.body.classList.remove('needs-setup'); watchProfile(user); watchKarten(user); }
-      else { userEmail = ''; stopSync(); stopKarten(); stopProfile(); showLogin(); }
+      else { userEmail = ''; stopSync(); stopKarten(); stopProfile(); curKid = ''; LS.del('spots.karte'); showLogin(); }
     });
   } catch (e) {
     setStatus('Offline', 'err');
@@ -1340,10 +1340,16 @@ function stopKarten() {
   if (karteUnsub) { karteUnsub(); karteUnsub = null; }
   karten = []; kartenKnown = false; curKarte = null; onboardShown = false;
 }
+let kartenRetry = 0;
 function watchKarten(user) {
   stopKarten();
+  listenKarten(user);
+}
+function listenKarten(user) {
   const { F } = fs;
+  if (kartenUnsub) { kartenUnsub(); kartenUnsub = null; }
   kartenUnsub = F.onSnapshot(F.collection(fs.db, 'nutzer', user.uid, 'meineKarten'), { includeMetadataChanges: true }, snap => {
+    kartenRetry = 0;
     karten = snap.docs.map(d => { const x = d.data() || {}; return { id: d.id, name: String(x.name || 'Karte').slice(0, 40), t: msOf(x.joinedAt) }; }).sort((a, b) => a.t - b.t);
     if (snap.metadata.fromCache && !karten.length) return; // erst entscheiden, wenn der Server geantwortet hat
     kartenKnown = true;
@@ -1352,7 +1358,13 @@ function watchKarten(user) {
       else { stopSync(); curKid = ''; curKarte = null; if (karteUnsub) { karteUnsub(); karteUnsub = null; } setStatus('Keine Karte', 'off'); maybeOnboard(); }
     } else if (!unsub) switchKarte(curKid, true);
     if (mode === 'karten') showKarten();
-  }, e => console.warn('Karten', e));
+  }, e => {
+    // Liste der eigenen Karten nicht abrufbar (z. B. kurz keine Verbindung) → später erneut versuchen statt aufzugeben
+    console.warn('Karten', e);
+    kartenUnsub = null;
+    const wait = Math.min(30000, 3000 * 2 ** kartenRetry++);
+    setTimeout(() => { if (me.uid === user.uid && !kartenUnsub && fs.auth.currentUser) listenKarten(user); }, wait);
+  });
 }
 function maybeOnboard() {
   if (!kartenKnown || karten.length || !me.uid || joining) return;
@@ -1410,7 +1422,7 @@ const joinForm = () => `<form id="joinForm" class="form inrow"><label>Code von d
 function showOnboard() {
   open(`<h2>Deine erste Karte</h2>
     <p class="mut">Leg eine eigene Karte an, zum Beispiel für dich und deinen Partner. Hat dein Partner schon eine Karte? Dann tritt ihr mit seinem Code bei.</p>
-    ${newKarteForm('Wir zwei')}
+    ${newKarteForm()}
     ${joinForm()}`, 'onboard');
 }
 function showKarten() {
@@ -1612,7 +1624,7 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act;
   if (a === 'close') closeSheet();
-  else if (a === 'add') { if (curKid) showAdd(); else showOnboard(); }
+  else if (a === 'add') { if (curKid && unsub) showAdd(); else showOnboard(); }
   else if (a === 'add-search') showSearch();
   else if (a === 'add-here') {
     toast('Standort wird ermittelt…');
@@ -1735,7 +1747,7 @@ if (typeof L === 'undefined') {
   connect();
   setTimeout(() => checkUpdate(false), 2500);
   setInterval(() => checkUpdate(false), 10 * 60 * 1000);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(false); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { checkUpdate(false); if (fs && fs.auth.currentUser && me.uid && !kartenUnsub) listenKarten(fs.auth.currentUser); } });
 }
 }
 </script>
