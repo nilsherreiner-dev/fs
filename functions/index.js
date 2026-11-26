@@ -57,6 +57,8 @@ So geht's:
 2. Tippe auf Teilen und wähle „Zum Home-Bildschirm“.
 3. Öffne FS vom Home-Bildschirm, tippe auf „Mit Einladungscode registrieren“ und gib den Code ein.
 
+Ausführliche Anleitung: ${APP_URL}start/
+
 Der Code gilt für ein Konto. Wenn du diese Mail nicht erwartet hast, kannst du sie einfach ignorieren.
 
 FS`;
@@ -72,6 +74,7 @@ FS`;
       <li>Öffne FS, tippe auf „Mit Einladungscode registrieren“ und gib den Code ein.</li>
     </ol>
     <p style="text-align:center;margin:0 0 18px"><a href="${APP_URL}" style="display:inline-block;background:#f2542d;color:#ffffff;text-decoration:none;font-weight:700;padding:13px 26px;border-radius:12px">FS öffnen</a></p>
+    <p style="text-align:center;margin:0 0 18px;font-size:14px"><a href="${APP_URL}start/" style="color:#f2542d;font-weight:700">Anleitung Schritt für Schritt</a></p>
     <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Der Code gilt für ein Konto. Wenn du diese Mail nicht erwartet hast, kannst du sie einfach ignorieren.</p>
   </div>
 </div></body></html>`;

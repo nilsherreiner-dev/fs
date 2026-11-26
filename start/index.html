@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16313a">
+<meta name="description" content="FS ist eine private Karte für zwei. So bekommst du Zugang, installierst die App auf dem Handy und holst deinen Partner dazu.">
+<title>FS – eure private Karte</title>
+<link rel="icon" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="stylesheet" href="../lib/fonts.css">
+<style>
+:root{
+  --nacht:#16313a; --kontur:#2c5560; --pflaume:#3a1f33; --signal:#f2542d; --gold:#f5b301; --minze:#7cc4b8;
+  --papier:#f3f5f4; --tinte:#1b2326; --grau:#5b6669; --linie:#d9dfdd;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--papier);color:var(--tinte);font:17px/1.6 'DM Sans',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--signal);outline-offset:3px;border-radius:6px}
+
+/* ---------- Hero: die Nachtkarte ---------- */
+.hero{position:relative;min-height:min(88vh,760px);background:var(--nacht);color:#fff;overflow:hidden;display:flex;align-items:flex-end}
+.hero svg.karte{position:absolute;inset:0;width:100%;height:100%}
+.karte .k{fill:none;stroke:var(--kontur);stroke-width:2}
+.pin{transform-box:fill-box;transform-origin:50% 100%}
+@media (prefers-reduced-motion:no-preference){
+  .pin{animation:fall .7s cubic-bezier(.2,1.4,.4,1) both}
+  @keyframes fall{from{transform:translateY(-120px);opacity:0}60%{opacity:1}to{transform:none;opacity:1}}
+}
+.hero-in{position:relative;width:100%;max-width:1040px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 28px) 24px 56px}
+.marke{position:absolute;top:calc(env(safe-area-inset-top) + 22px);left:max(24px,calc((100% - 1040px) / 2 + 24px));font-weight:700;font-size:22px;letter-spacing:-.01em}
+.hero h1{font-size:clamp(46px,9vw,92px);line-height:.95;letter-spacing:-.035em;font-weight:700;margin:0 0 20px;max-width:9ch}
+.hero p.lead{font-size:clamp(18px,2.4vw,21px);line-height:1.5;max-width:34ch;margin:0 0 30px;color:#d8e6e4}
+.knoepfe{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 24px;border-radius:999px;font-weight:700;font-size:17px;text-decoration:none;border:0}
+.btn.voll{background:var(--signal);color:#fff}
+.btn.rand{background:transparent;color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+.btn.dunkel{background:var(--pflaume);color:#fff}
+
+/* ---------- Inhalt ---------- */
+main{max-width:1040px;margin:0 auto;padding:0 24px}
+section{padding:72px 0 8px}
+h2{font-size:clamp(30px,4.6vw,44px);line-height:1.08;letter-spacing:-.025em;margin:0 0 14px}
+.intro{max-width:56ch;color:var(--grau);margin:0 0 36px}
+
+.kurz{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:28px 40px;margin:8px 0 0;padding:0;list-style:none}
+.kurz li{padding-left:34px;position:relative;max-width:40ch}
+.kurz li::before{content:'';position:absolute;left:0;top:5px;width:18px;height:18px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--farbe,var(--signal));box-shadow:0 0 0 3px #fff}
+.kurz b{display:block;font-size:19px;margin-bottom:2px}
+.kurz span{color:var(--grau)}
+
+/* Der Weg zu FS: Route mit nummerierten Pins */
+.route{list-style:none;margin:0;padding:0;position:relative;counter-reset:schritt}
+.route>li:not(:last-child)::after{content:'';position:absolute;left:23px;top:58px;bottom:6px;border-left:3px dashed var(--kontur);opacity:.45}
+.route>li{position:relative;padding:0 0 44px 76px;counter-increment:schritt;max-width:720px}
+.route>li::before{content:counter(schritt);position:absolute;left:0;top:0;width:48px;height:48px;border-radius:50%;background:var(--signal);color:#fff;font-weight:700;font-size:20px;display:grid;place-items:center;box-shadow:0 0 0 4px var(--papier),0 4px 12px rgba(22,49,58,.25)}
+.route>li:last-child::before{background:var(--pflaume)}
+.route h3{font-size:22px;line-height:1.25;margin:9px 0 6px;letter-spacing:-.01em}
+.route p{margin:0 0 10px;color:var(--grau)}
+.route p strong{color:var(--tinte)}
+.route .btn{margin-top:6px}
+.link{color:var(--signal);font-weight:700;text-decoration:none;border-bottom:2px solid rgba(242,84,45,.3)}
+.adr{display:inline-block;font-weight:700;color:var(--tinte);background:#fff;border-radius:10px;padding:6px 12px;margin:2px 0 10px;box-shadow:0 1px 0 var(--linie)}
+
+/* Gerät wählen */
+.geraet{display:inline-flex;background:#e4e9e7;border-radius:999px;padding:4px;margin:6px 0 14px}
+.geraet button{font:inherit;font-weight:700;font-size:15px;border:0;background:none;border-radius:999px;padding:8px 18px;min-height:40px;color:var(--grau);cursor:pointer}
+.geraet button[aria-selected="true"]{background:#fff;color:var(--tinte);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.anl{margin:0;padding:0 0 0 20px;color:var(--grau)}
+.anl li{margin:0 0 6px;padding-left:4px}
+.anl b{color:var(--tinte)}
+.sym{display:inline-block;vertical-align:-4px;width:20px;height:20px;color:#0a84ff}
+[hidden]{display:none!important}
+
+/* Fragen */
+.fragen{max-width:760px;border-top:1px solid var(--linie)}
+details{border-bottom:1px solid var(--linie)}
+summary{list-style:none;cursor:pointer;font-weight:700;font-size:19px;padding:18px 40px 18px 0;position:relative}
+summary::-webkit-details-marker{display:none}
+summary::after{content:'';position:absolute;right:6px;top:50%;width:12px;height:12px;border-right:2.5px solid var(--grau);border-bottom:2.5px solid var(--grau);transform:translateY(-70%) rotate(45deg);transition:transform .2s}
+details[open] summary::after{transform:translateY(-30%) rotate(225deg)}
+details p{margin:0 0 20px;color:var(--grau);max-width:62ch}
+
+.schluss{margin:80px 0 0;background:var(--pflaume);color:#fff;border-radius:28px;padding:44px 32px;display:flex;flex-wrap:wrap;gap:20px 32px;align-items:center;justify-content:space-between}
+.schluss h2{margin:0;color:#fff;font-size:clamp(26px,3.6vw,36px);max-width:18ch}
+footer{max-width:1040px;margin:0 auto;padding:40px 24px calc(env(safe-area-inset-bottom) + 40px);color:var(--grau);font-size:15px;display:flex;flex-wrap:wrap;gap:8px 22px}
+footer a{text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer span{margin-right:auto}
+@media (max-width:560px){
+  .route>li{padding-left:64px}
+  .route>li::before{width:42px;height:42px;font-size:18px}
+  .route>li:not(:last-child)::after{left:20px;top:52px}
+  .schluss{padding:32px 22px}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="karte" viewBox="0 0 1200 760" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
+    <g class="k"><path d="M-40 31Q-40 31 -10 38Q20 45 50 51Q80 57 110 59Q140 61 170 60Q200 59 230 58Q260 56 290 55Q320 55 350 56Q380 57 410 57Q440 57 470 54Q500 51 530 45Q560 38 590 31Q620 25 650 21Q680 16 710 16Q740 16 770 19Q800 22 830 24Q860 26 890 27Q920 27 950 27Q980 27 1010 28Q1040 30 1070 34Q1100 39 1130 46Q1160 52 1190 58"/><path d="M-40 112Q-40 112 -10 114Q20 117 50 116Q80 114 110 111Q140 108 170 106Q200 104 230 104Q260 104 290 104Q320 104 350 102Q380 99 410 94Q440 88 470 81Q500 75 530 70Q560 66 590 66Q620 66 650 69Q680 72 710 76Q740 80 770 82Q800 84 830 84Q860 84 890 85Q920 86 950 90Q980 94 1010 100Q1040 106 1070 111Q1100 117 1130 119Q1160 121 1190 118"/><path d="M-40 169Q-40 169 -10 165Q20 161 50 157Q80 154 110 152Q140 151 170 151Q200 150 230 149Q260 147 290 142Q320 138 350 132Q380 125 410 121Q440 117 470 116Q500 116 530 120Q560 124 590 129Q620 134 650 137Q680 140 710 141Q740 142 770 143Q800 144 830 146Q860 149 890 154Q920 159 950 164Q980 169 1010 171Q1040 173 1070 170Q1100 168 1130 162Q1160 157 1190 152"/><path d="M-40 203Q-40 203 -10 200Q20 198 50 197Q80 196 110 195Q140 194 170 191Q200 187 230 182Q260 177 290 173Q320 169 350 168Q380 168 410 172Q440 176 470 182Q500 187 530 192Q560 197 590 199Q620 200 650 201Q680 201 710 203Q740 204 770 208Q800 212 830 216Q860 220 890 222Q920 224 950 222Q980 219 1010 213Q1040 207 1070 201Q1100 195 1130 192Q1160 188 1190 187"/><path d="M-40 242Q-40 242 -10 242Q20 241 50 239Q80 237 110 233Q140 229 170 225Q200 222 230 221Q260 221 290 225Q320 229 350 235Q380 242 410 247Q440 253 470 256Q500 258 530 258Q560 259 590 259Q620 259 650 262Q680 264 710 267Q740 270 770 272Q800 274 830 272Q860 269 890 264Q920 258 950 251Q980 244 1010 239Q1040 235 1070 234Q1100 233 1130 233Q1160 234 1190 234"/><path d="M-40 287Q-40 287 -10 285Q20 282 50 279Q80 276 110 276Q140 275 170 279Q200 282 230 289Q260 296 290 302Q320 309 350 312Q380 315 410 316Q440 316 470 315Q500 314 530 315Q560 316 590 318Q620 320 650 321Q680 323 710 321Q740 319 770 313Q800 307 830 300Q860 293 890 288Q920 283 950 281Q980 280 1010 281Q1040 282 1070 284Q1100 285 1130 284Q1160 284 1190 283"/><path d="M-40 331Q-40 331 -10 331Q20 331 50 334Q80 337 110 344Q140 350 170 357Q200 364 230 368Q260 372 290 372Q320 372 350 371Q380 369 410 368Q440 367 470 368Q500 368 530 369Q560 370 590 369Q620 367 650 362Q680 357 710 350Q740 343 770 337Q800 331 830 330Q860 328 890 330Q920 331 950 334Q980 337 1010 338Q1040 339 1070 339Q1100 338 1130 339Q1160 339 1190 342"/><path d="M-40 392Q-40 392 -10 399Q20 405 50 412Q80 419 110 423Q140 427 170 428Q200 428 230 425Q260 423 290 420Q320 418 350 417Q380 416 410 417Q440 417 470 416Q500 415 530 410Q560 406 590 399Q620 393 650 387Q680 381 710 379Q740 377 770 379Q800 381 830 385Q860 389 890 391Q920 394 950 395Q980 396 1010 396Q1040 396 1070 399Q1100 401 1130 407Q1160 412 1190 418"/><path d="M-40 472Q-40 472 -10 477Q20 482 50 482Q80 483 110 480Q140 476 170 472Q200 469 230 466Q260 464 290 464Q320 463 350 462Q380 462 410 458Q440 455 470 449Q500 443 530 437Q560 432 590 430Q620 427 650 430Q680 432 710 437Q740 441 770 445Q800 450 830 451Q860 453 890 454Q920 454 950 456Q980 458 1010 462Q1040 466 1070 472Q1100 477 1130 481Q1160 484 1190 484"/><path d="M-40 536Q-40 536 -10 533Q20 529 50 524Q80 519 110 516Q140 512 170 511Q200 509 230 509Q260 508 290 506Q320 503 350 499Q380 494 410 489Q440 484 470 481Q500 479 530 481Q560 483 590 489Q620 494 650 500Q680 505 710 508Q740 511 770 511Q800 512 830 513Q860 514 890 517Q920 520 950 524Q980 529 1010 532Q1040 536 1070 535Q1100 535 1130 530Q1160 525 1190 519"/><path d="M-40 569Q-40 569 -10 564Q20 560 50 558Q80 555 110 555Q140 554 170 553Q200 552 230 548Q260 545 290 541Q320 536 350 534Q380 532 410 534Q440 536 470 542Q500 548 530 554Q560 560 590 564Q620 568 650 569Q680 570 710 570Q740 570 770 572Q800 573 830 576Q860 580 890 583Q920 586 950 585Q980 585 1010 580Q1040 576 1070 569Q1100 562 1130 556Q1160 551 1190 548"/><path d="M-40 602Q-40 602 -10 601Q20 601 50 601Q80 601 110 599Q140 597 170 593Q200 590 230 588Q260 586 290 588Q320 590 350 596Q380 601 410 608Q440 615 470 620Q500 625 530 626Q560 628 590 627Q620 626 650 626Q680 626 710 628Q740 630 770 632Q800 634 830 634Q860 634 890 630Q920 625 950 618Q980 612 1010 605Q1040 599 1070 596Q1100 593 1130 593Q1160 593 1190 595"/><path d="M-40 649Q-40 649 -10 649Q20 649 50 647Q80 645 110 643Q140 642 170 643Q200 645 230 650Q260 656 290 663Q320 670 350 675Q380 681 410 683Q440 684 470 683Q500 682 530 681Q560 679 590 679Q620 680 650 681Q680 682 710 682Q740 682 770 678Q800 674 830 668Q860 661 890 654Q920 648 950 644Q980 641 1010 641Q1040 642 1070 644Q1100 647 1130 648Q1160 650 1190 650"/><path d="M-40 700Q-40 700 -10 699Q20 698 50 699Q80 701 110 705Q140 710 170 717Q200 724 230 730Q260 736 290 738Q320 740 350 739Q380 737 410 734Q440 732 470 730Q500 729 530 729Q560 729 590 729Q620 729 650 726Q680 723 710 717Q740 711 770 704Q800 698 830 694Q860 690 890 690Q920 691 950 694Q980 698 1010 701Q1040 704 1070 705Q1100 707 1130 707Q1160 707 1190 708"/></g>
+    <g transform="translate(830 215)"><g class="pin" style="animation-delay:0s"><path d="M24 57 16 44h16z" fill="#fff"/><circle cx="24" cy="24" r="21" fill="#f5b301" stroke="#fff" stroke-width="3"/></g></g>
+    <g transform="translate(950 70) scale(1.6)"><g class="pin" style="animation-delay:.25s"><path d="M24 57 16 44h16z" fill="#fff"/><circle cx="24" cy="24" r="21" fill="#f2542d" stroke="#fff" stroke-width="3"/><circle cx="24" cy="24" r="6" fill="#fff"/></g></g>
+    <g transform="translate(1095 200) scale(.85)"><g class="pin" style="animation-delay:.45s"><path d="M24 57 16 44h16z" fill="#fff"/><circle cx="24" cy="24" r="21" fill="#7cc4b8" stroke="#fff" stroke-width="3"/></g></g>
+    <g transform="translate(690 120) scale(.75)"><g class="pin" style="animation-delay:.6s"><path d="M24 57 16 44h16z" fill="#fff"/><circle cx="24" cy="24" r="21" fill="#7cc4b8" stroke="#fff" stroke-width="3"/></g></g>
+  </svg>
+  <span class="marke">FS</span>
+  <div class="hero-in">
+    <h1>Eure Orte. Eure Karte.</h1>
+    <p class="lead">FS ist eine private Karte für zwei. Speichert die Plätze, die nur euch gehören, bewertet sie und findet jederzeit wieder hin.</p>
+    <div class="knoepfe">
+      <a class="btn voll" href="../anfrage/">Zugang anfragen</a>
+      <a class="btn rand" href="#oeffnen">Ich habe schon einen Code</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section aria-labelledby="was">
+    <h2 id="was">Was FS kann</h2>
+    <p class="intro">Kein Download aus dem App Store nötig: FS läuft im Browser und liegt danach wie eine normale App auf deinem Home-Bildschirm.</p>
+    <ul class="kurz">
+      <li><b>Nur ihr zwei</b><span>Eure Karte sieht nur, wen ihr selbst mit einem Code einladet.</span></li>
+      <li style="--farbe:var(--gold)"><b>Bewerten und wiederfinden</b><span>Sterne für Gesamt, Ambiente und wie ungestört es ist. Mit Foto, Adresse und Route.</span></li>
+      <li style="--farbe:var(--minze)"><b>Öffentlich, wenn ihr wollt</b><span>Einzelne Spots könnt ihr teilen – ohne Fotos, nur mit Profilbild und Kürzel wie „N…s“.</span></li>
+    </ul>
+  </section>
+
+  <section id="weg" aria-labelledby="wegH">
+    <h2 id="wegH">So kommst du rein</h2>
+    <p class="intro">Sechs Schritte, ein paar Minuten. Dein Partner braucht danach nur Schritt 3 bis 5 – mit deinem Partner-Code statt eines eigenen Einladungscodes.</p>
+    <ol class="route">
+      <li>
+        <h3>Zugang anfragen</h3>
+        <p>Trag deine E-Mail-Adresse auf der Anfrageseite ein. FS ist gerade in einer kleinen Testphase, deshalb gibt es Zugang nur mit Code.</p>
+        <a class="btn dunkel" href="../anfrage/">Zur Anfrageseite</a>
+      </li>
+      <li>
+        <h3>Code aus der Mail holen</h3>
+        <p>Dein Einladungscode kommt von <strong>einladung@geheimespots.de</strong> und sieht so aus: <strong>ABCD-EFGH</strong>.</p>
+        <p>Nichts da? Schau im Spam-Ordner nach und markiere die Mail als „Kein Spam“.</p>
+      </li>
+      <li id="oeffnen">
+        <h3>FS im Browser öffnen</h3>
+        <p>Auf dem iPhone in <strong>Safari</strong>, auf Android in <strong>Chrome</strong>:</p>
+        <a class="adr" href="../">app.geheimespots.de</a>
+      </li>
+      <li>
+        <h3>Zum Home-Bildschirm hinzufügen</h3>
+        <div class="geraet" role="tablist" aria-label="Dein Handy">
+          <button role="tab" id="t-ios" aria-controls="p-ios" aria-selected="true">iPhone</button>
+          <button role="tab" id="t-and" aria-controls="p-and" aria-selected="false" tabindex="-1">Android</button>
+        </div>
+        <div id="p-ios" role="tabpanel" aria-labelledby="t-ios">
+          <ol class="anl">
+            <li>Tippe unten auf <b>Teilen</b> <svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>. Siehst du es nicht, tippe erst auf die drei Punkte.</li>
+            <li>Scrolle und wähle <b>Zum Home-Bildschirm</b>.</li>
+            <li>Tippe oben rechts auf <b>Hinzufügen</b>.</li>
+          </ol>
+        </div>
+        <div id="p-and" role="tabpanel" aria-labelledby="t-and" hidden>
+          <ol class="anl">
+            <li>Tippe oben rechts auf das Menü <b>⋮</b>.</li>
+            <li>Wähle <b>App installieren</b> oder <b>Zum Startbildschirm hinzufügen</b>.</li>
+            <li>Bestätige mit <b>Installieren</b>.</li>
+          </ol>
+        </div>
+        <p style="margin-top:10px">Öffne FS ab jetzt immer über das neue Symbol. Dann bleibst du angemeldet und hast den ganzen Bildschirm für die Karte.</p>
+      </li>
+      <li>
+        <h3>Registrieren</h3>
+        <p>Tippe auf <strong>„Mit Einladungscode registrieren“</strong> und gib deinen Code, einen Namen, deine E-Mail und ein Passwort ein. Danach legst du deine erste Karte an.</p>
+      </li>
+      <li>
+        <h3>Partner dazuholen</h3>
+        <p>In FS: <strong>Einstellungen</strong> (oben rechts) › <strong>Karte</strong> › Zahnrad neben deiner Karte › <strong>Code erstellen</strong> und teilen.</p>
+        <p>Dein Partner macht Schritt 3 bis 5 und gibt beim Registrieren einfach deinen Partner-Code ein. Eine eigene Anfrage braucht er nicht – er landet direkt auf eurer gemeinsamen Karte.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="fragenH">
+    <h2 id="fragenH">Fragen</h2>
+    <div class="fragen">
+      <details><summary>Was kostet FS?</summary><p>Während der Testphase nichts. Später wird es eine kostenlose Grundversion geben und ein Abo oder einen Einmalkauf für mehr Funktionen. Du wirst vorher informiert.</p></details>
+      <details><summary>Wer sieht meine Spots?</summary><p>Nur die Mitglieder eurer Karte. Auf der öffentlichen Karte erscheint ein Spot nur, wenn du ihn selbst teilst – dann ohne Fotos, und von dir sieht man nur Profilbild und Kürzel. Teilen lässt sich jederzeit wieder ausschalten.</p></details>
+      <details><summary>Gibt es FS im App Store?</summary><p>Noch nicht. FS ist eine Web-App: Du installierst sie über den Browser auf deinem Home-Bildschirm und bekommst Updates automatisch, ganz ohne App Store.</p></details>
+      <details><summary>Funktioniert FS auch auf Android?</summary><p>Ja. Öffne app.geheimespots.de in Chrome und installiere FS über das Menü, wie in Schritt 4 beschrieben.</p></details>
+      <details><summary>Ich habe keine Mail mit Code bekommen.</summary><p>Schau zuerst im Spam-Ordner nach. Ist dort nichts, schreib an <a class="link" href="mailto:kontakt@geheimespots.de">kontakt@geheimespots.de</a>. Wir schicken den Code gern nochmal.</p></details>
+      <details><summary>Ab welchem Alter ist FS?</summary><p>FS ist nur für Erwachsene ab 18 Jahren.</p></details>
+      <details><summary>Wie lösche ich mein Konto?</summary><p>In FS unter Einstellungen › Konto löschen. Dein Profil, dein Login und deine öffentlichen Einträge werden dann gelöscht.</p></details>
+    </div>
+  </section>
+
+  <div class="schluss">
+    <h2>Bereit für eure erste Karte?</h2>
+    <a class="btn voll" href="../anfrage/">Zugang anfragen</a>
+  </div>
+</main>
+
+<footer>
+  <span>Fragen? <a href="mailto:kontakt@geheimespots.de">kontakt@geheimespots.de</a></span>
+  <a href="../rechtliches/datenschutz.html">Datenschutz</a>
+  <a href="../rechtliches/nutzungsbedingungen.html">Nutzungsbedingungen</a>
+  <a href="../rechtliches/impressum.html">Impressum</a>
+</footer>
+
+<script>
+// Gerät erkennen und passende Anleitung zeigen; Tabs per Tippen und Pfeiltasten
+(function () {
+  var tabs = [document.getElementById('t-ios'), document.getElementById('t-and')];
+  function waehle(i, fokus) {
+    tabs.forEach(function (t, j) {
+      var an = i === j;
+      t.setAttribute('aria-selected', an ? 'true' : 'false');
+      t.tabIndex = an ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !an;
+    });
+    if (fokus) tabs[i].focus();
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { waehle(i); });
+    t.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); waehle(1 - i, true); }
+    });
+  });
+  if (/android/i.test(navigator.userAgent)) waehle(1);
+})();
+</script>
+</body>
+</html>
