@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-22">
+<meta name="app-version" content="2026.11.26-23">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -144,6 +144,9 @@ div.item{padding:0;gap:4px}
 .favs .item:first-child{border-top:0}
 .hint{color:var(--mut);font-size:14px;background:var(--field);border-radius:14px;padding:12px 14px;margin:4px 0 0}
 .searchrow2{display:flex;gap:8px;align-items:center;margin:18px 0 0;position:relative}
+.sugsearch{display:flex;gap:8px;align-items:center;margin:4px 0 10px}.sugsearch .searchbox{flex:1;margin:0}.sugsearch .btn{flex:none}
+.sugplace{display:flex;align-items:center;gap:8px;background:var(--field);border-radius:14px;padding:6px 6px 6px 12px;margin:0 0 10px;font-size:14px}
+.sugplace svg{width:18px;height:18px;color:var(--gold)}.sugplace span{flex:1}.sugplace .linkbtn{min-height:36px;padding:0 8px}
 .searchrow2 .searchbox{flex:1;margin:0}
 .sortbtn{flex:none;position:relative;width:48px;height:48px;border-radius:12px;border:0;background:var(--field);display:grid;place-items:center;color:var(--ink)}
 .sortbtn.act{background:var(--acc);color:#fff}
@@ -323,8 +326,9 @@ const PAL = {
     motor: '#6b5640', motorC: '#3f3327', major: '#544838', majorC: '#3a3229', mid: '#3d4544', midC: '#2b3232', minor: '#384241', minorC: '#283030',
     parkP: '#6fbf8f', relief: 0.25, bright: 0.35 },
   // Abend: dieselbe Nacht wie auf der Startseite – Pflaume, Wein, warme Wege
-  abend: { bg: '#22141d', farm: '#28171f', resid: '#271620', indus: '#2a1922', grass: '#2b1a24', park: '#331f2c', cem: '#2e1c28', pitch: '#301e2a',
-    wet: '#251c30', sand: '#33241f', rock: '#2b1d24', ice: '#2c2533', wood: '#382232', woodEdge: '#45293d', tree: '#6a4560', paisle: '#5a3a4e', parkDot: '#7d5e6e', dotRing: '#22141d', prot: '#b07a95', protLine: '#c48aa6',
+  // Naturflächen bleiben grün (gedämpft, damit sie zur Nacht passen); Schutzgebiete heller umrandet
+  abend: { bg: '#22141d', farm: '#28171f', resid: '#271620', indus: '#2a1922', grass: '#232a1f', park: '#24341f', cem: '#252c20', pitch: '#263022',
+    wet: '#1f2d2b', sand: '#33241f', rock: '#2b1d24', ice: '#2c2533', wood: '#1f3622', woodEdge: '#2c4a2f', tree: '#4f8a55', paisle: '#5a3a4e', parkDot: '#7d5e6e', dotRing: '#22141d', prot: '#6fbf86', protLine: '#8fd4a2',
     water: '#1d1a31', waterLine: '#2c2749', bld: '#2f1c28', bldLine: '#3b2532', path: '#8a6168', rail: '#43303b', border: '#8f7fb0',
     motor: '#7a3e44', motorC: '#4a2830', major: '#62343c', majorC: '#43262e', mid: '#46293a', midC: '#2f1c26', minor: '#3d2531', minorC: '#2a1922',
     parkP: '#c48aa6', relief: 0.22, bright: 0.32 }
@@ -641,9 +645,9 @@ async function reverseGeo(lat, lng) {
   if (!r.ok) throw new Error('Adressdienst nicht erreichbar');
   return fmtAddr(await r.json());
 }
-async function searchGeo(q) {
+async function searchGeo(q, frei) {
   let u = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&accept-language=de&q=${encodeURIComponent(q)}`;
-  if (map.getZoom() >= 8) { const b = map.getBounds(); u += `&viewbox=${b.getWest()},${b.getNorth()},${b.getEast()},${b.getSouth()}`; }
+  if (!frei && map.getZoom() >= 8) { const b = map.getBounds(); u += `&viewbox=${b.getWest()},${b.getNorth()},${b.getEast()},${b.getSouth()}`; }
   const r = await fetch(u);
   if (!r.ok) throw new Error('Adressdienst nicht erreichbar');
   const j = await r.json();
@@ -827,7 +831,9 @@ function refreshList() {
   if (mode !== 'list') return;
   const y = $('#sheet').scrollTop;
   const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+  const sq = $('#sugQ'), sqv = sq ? sq.value : null, sqf = sq && document.activeElement === sq;
   set('#favBox', favHtml()); set('#lres', listBodyHtml()); set('#sugBox', sugHtml());
+  const sq2 = $('#sugQ'); if (sq2 && sqv !== null) { sq2.value = sqv; if (sqf) sq2.focus(); }
   const c = $('#lcount'); if (c) c.textContent = pins.size;
   const f = $('#fcount'); if (f) f.textContent = favPins().length + '/5';
   $('#sheet').scrollTop = y;
@@ -912,7 +918,7 @@ const SUG_T = {
   hut: { label: 'Schutzhütte', icon: 'hut' },
   picnic: { label: 'Picknickplatz', icon: 'picnic' }
 };
-const SUG = { items: [], loading: false, err: '', origin: null, originLabel: '', show: LS.get('spots.sugShow', false), layer: null, tj: null, req: 0 };
+const SUG = { items: [], loading: false, err: '', origin: null, originLabel: '', show: LS.get('spots.sugShow', false), layer: null, tj: null, req: 0, place: LS.get('spots.sugPlace', null) };
 const sugIcon = t => { const i = SUG_T[t].icon; return i.startsWith('<') ? i : ico(i); };
 function distM(a, b) {
   const R = 6371000, toR = Math.PI / 180;
@@ -920,17 +926,46 @@ function distM(a, b) {
   return Math.sqrt(x * x + y * y) * R;
 }
 function sugHtml() {
-  if (SUG.loading && !SUG.items.length) return '<p class="hint">Suche Waldparkplätze und schöne Orte in der Nähe…</p>';
-  if (SUG.err && !SUG.items.length) return `<p class="hint">${esc(SUG.err)}</p><button class="btn more" data-act="sug-reload">Nochmal versuchen</button>`;
-  if (!SUG.origin) return '<p class="hint">Vorschläge werden geladen, sobald die Karte bereit ist.</p>';
+  if (SUG.loading && !SUG.items.length) return sugSearchHtml() + `<p class="hint">Suche Waldparkplätze und schöne Orte ${SUG.place ? 'rund um ' + esc(SUG.place.name) : 'in der Nähe'}…</p>`;
+  if (SUG.err && !SUG.items.length) return sugSearchHtml() + `<p class="hint">${esc(SUG.err)}</p><button class="btn more" data-act="sug-reload">Nochmal versuchen</button>`;
+  if (!SUG.origin) return sugSearchHtml() + '<p class="hint">Vorschläge werden geladen, sobald die Karte bereit ist.</p>';
   const list = SUG.items.filter(s => !nearSaved(s)).slice(0, 12);
-  const head = `<p class="small mut" style="margin:0 0 4px">${esc(SUG.originLabel)}</p>`;
+  const head = sugSearchHtml() + `<p class="small mut" style="margin:0 0 4px">${esc(SUG.originLabel)}</p>`;
   if (!list.length) return head + '<p class="hint">Hier in der Nähe nichts Passendes gefunden. Verschiebe die Karte und suche dort.</p><button class="btn more" data-act="sug-here">Im Kartenausschnitt suchen</button>';
   return head + list.map(s => `<button class="item" data-act="sug" data-i="${SUG.items.indexOf(s)}"><span class="sico">${sugIcon(s.t)}</span><span class="t"><b>${esc(s.name)}</b><small>${esc(SUG_T[s.t].label)}${s.inWood && s.t !== 'park' ? ' · im Wald' : ''}</small></span><span class="dist">${fmtKm(s.d)}</span></button>`).join('') +
     '<button class="btn more" data-act="sug-here">Im aktuellen Kartenausschnitt suchen</button>';
 }
+// Suchfeld: Vorschläge an einem anderen Ort (Ort, PLZ, Gegend) statt am eigenen Standort
+function sugSearchHtml() {
+  return `<form id="sugForm" class="sugsearch"><div class="searchbox">${ico('search')}<input id="sugQ" type="search" placeholder="Ort oder PLZ, z. B. Bingen" enterkeyhint="search" autocomplete="off" aria-label="Ort für Vorschläge" value="${SUG.place ? esc(SUG.place.q || '') : ''}"></div><button class="btn primary" type="submit">Suchen</button></form>
+    ${SUG.place ? `<div class="sugplace">${ico('loc')}<span>Vorschläge rund um <b>${esc(SUG.place.name)}</b></span><button type="button" class="linkbtn" data-act="sug-reset">Zurücksetzen</button></div>` : ''}`;
+}
+async function sugSearch(q) {
+  q = String(q || '').trim(); if (q.length < 2) { toast('Bitte einen Ort oder eine PLZ eingeben'); return; }
+  const btn = $('#sugForm [type=submit]'); if (btn) { btn.disabled = true; btn.textContent = 'Suche…'; }
+  try {
+    const r = await searchGeo(/^\d{5}$/.test(q) ? q + ', Deutschland' : q, true);
+    if (!r.length) { toast('Diesen Ort haben wir nicht gefunden'); return; }
+    const x = r[0], a = x.address || {};
+    const name = String(a.city || a.town || a.village || a.municipality || a.suburb || x.name || q).slice(0, 60) + (a.postcode && /^\d{5}$/.test(q) ? ' (' + a.postcode + ')' : '');
+    SUG.place = { c: [+x.lat, +x.lon], name, q: q.slice(0, 60) }; LS.set('spots.sugPlace', SUG.place);
+    SUG.show = true; LS.set('spots.sugShow', true);
+    closeSheet();
+    map.setView(SUG.place.c, 13);
+    toast(`Vorschläge rund um ${name} – zurücksetzen in der Liste`, 3500);
+    await loadSuggestions(true);
+    drawSugMarkers();
+  } catch (e) { toast('Suche fehlgeschlagen: ' + errHint(e)); }
+  finally { const b2 = $('#sugForm [type=submit]'); if (b2) { b2.disabled = false; b2.textContent = 'Suchen'; } }
+}
+function sugReset() {
+  SUG.place = null; LS.del('spots.sugPlace');
+  toast('Suche zurückgesetzt – Vorschläge wieder rund um deinen Standort');
+  loadSuggestions(true);
+}
 const nearSaved = s => [...pins.values()].some(p => distM([p.lat, p.lng], [s.lat, s.lng]) < 80);
 async function sugOrigin(useMap) {
+  if (!useMap && SUG.place) return { c: SUG.place.c, label: 'Rund um ' + SUG.place.name };
   if (!useMap) {
     try {
       const perm = navigator.permissions && await navigator.permissions.query({ name: 'geolocation' });
@@ -1870,6 +1905,7 @@ document.addEventListener('click', e => {
   else if (a === 'sug') { const s = SUG.items[+b.dataset.i]; if (s) { map.setView([s.lat, s.lng], Math.max(map.getZoom(), 15)); showSug(+b.dataset.i); } }
   else if (a === 'sug-here') loadSuggestions(true, true);
   else if (a === 'sug-reload') loadSuggestions(true);
+  else if (a === 'sug-reset') sugReset();
   else if (a === 'sug-save') { const s = SUG.items[+b.dataset.i]; if (s) { newDraft(s.lat, s.lng, s.addr || ''); draft.name = s.t === 'park' && s.name === SUG_T.park.label ? 'Waldparkplatz' : s.name; showForm(); } }
   else if (a === 'route') showRoute(+b.dataset.lat, +b.dataset.lng, b.dataset.m);
   else if (a === 'route-clear') clearRoute();
@@ -1937,6 +1973,7 @@ document.addEventListener('submit', e => {
   else if (e.target.id === 'joinForm') joinWithCode($('#jCode').value);
   else if (e.target.id === 'renameForm') renameKarte($('#rkName').value);
   else if (e.target.id === 'meldForm') sendMeldung(e.target);
+  else if (e.target.id === 'sugForm') sugSearch($('#sugQ').value);
 });
 document.addEventListener('change', async e => {
   if (e.target.id === 'sugTog') {
