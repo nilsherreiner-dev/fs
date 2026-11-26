@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FS">
-<meta name="app-version" content="2026.11.25-17">
+<meta name="app-version" content="2026.11.26-18">
 <meta name="theme-color" content="#3a1f33">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -205,6 +205,25 @@ body.needs-setup #setup{display:block}
 .form label.chk{display:flex;gap:12px;align-items:flex-start;color:var(--ink);font-size:15px;font-weight:400}
 .chk a{color:var(--acc)}
 .chk input{width:22px;height:22px;flex:none;margin:1px 0 0;padding:0;-webkit-appearance:checkbox;appearance:auto;accent-color:var(--acc)}
+.chk input[type=radio]{-webkit-appearance:radio}
+.top .rgt{display:flex;gap:8px}
+.chip.on{background:#3a1f33;color:#fff}
+.pub-b{width:38px;height:38px;border-radius:50%;background:#3a1f33;color:#fff;border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.35);display:grid;place-items:center;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
+.pub-b svg{width:18px;height:18px}
+.av.pubav{background:#3a1f33}.av.pubav svg{width:40px;height:40px}
+.av.xs{width:36px;height:36px;font-size:14px;border-width:2px;box-shadow:none}
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--field);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700;margin:10px 0 0}
+.badge svg{width:16px;height:16px}
+.form label.chk.pubchk{background:var(--field);border-radius:14px;padding:12px 14px;margin:16px 0 4px}
+.rev{border-top:1px solid var(--line);padding:12px 0 4px}
+.rev-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rev .who{background:none;border:0;padding:0;display:flex;align-items:center;gap:10px;font-weight:700;text-align:left;min-height:44px;color:inherit}
+.rev .who small{display:block;font-weight:400;color:var(--mut);font-size:13px}
+.rev .st{width:18px;height:18px}
+.rev-t{display:block;margin-top:6px}
+.rev-r{margin:4px 0 0}
+.rev-m{color:var(--mut);font-weight:500;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.rev-m svg,.ort-m svg{width:16px;height:16px}
 #setupSwitch{margin-top:4px;text-align:center}
 .choice .av.s{border-width:0}
 .inrow{display:flex;gap:8px;align-items:flex-end;margin-bottom:12px}.inrow label{flex:1;margin:0!important}.inrow .btn{flex:none}
@@ -218,7 +237,7 @@ body.needs-setup #setup{display:block}
 
 <div class="top">
   <button class="chip" data-act="list" aria-label="Alle Spots anzeigen"><span class="dot" id="dot"></span><span id="stxt">Spots</span></button>
-  <button class="chip ic" data-act="settings" aria-label="Einstellungen" data-ic="gear"></button>
+  <div class="rgt"><button class="chip ic" id="pubBtn" data-act="pub" aria-label="Öffentliche Karte ein- oder ausblenden" aria-pressed="false" data-ic="globe"></button><button class="chip ic" data-act="settings" aria-label="Einstellungen" data-ic="gear"></button></div>
 </div>
 <div class="fabs">
   <button class="fab" data-act="fit" aria-label="Alle Spots zeigen" data-ic="fit"></button>
@@ -388,7 +407,9 @@ const IC = {
   car: '<path d="M5 16V11l2-5h10l2 5v5M5 16h14M5 16v2M19 16v2M5 11h14"/><circle cx="8" cy="13.5" r=".6"/><circle cx="16" cy="13.5" r=".6"/>',
   bike: '<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-7h5l3 7M10 9l-1.5-3H6M15 9l-2 7"/>',
   walk: '<circle cx="13" cy="4.5" r="1.8"/><path d="M9 21l2.5-6.5L14 17v4M11.5 14.5L12 9l3.5 3.5L18 13M12 9l-3 2-1 3"/>',
-  route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>'
+  route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9M12 3c-2.5 2.6-3.8 5.6-3.8 9s1.3 6.4 3.8 9"/>',
+  flag: '<path d="M5 21V4M5 4h12l-2.5 4 2.5 4H5"/>'
 };
 const STAR = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>';
 
@@ -636,7 +657,7 @@ async function doSearch() {
   } catch (e) { box.innerHTML = `<p class="empty">${esc(e.message)}</p>`; }
 }
 function newDraft(lat, lng, address = '') {
-  draft = { name: '', desc: '', address, autoAddr: address, lat, lng, photo: '', r: { g: 0, a: 0, u: 0 } };
+  draft = { name: '', desc: '', address, autoAddr: address, lat, lng, photo: '', r: { g: 0, a: 0, u: 0 }, pub: false, pubBy: '' };
   showForm();
 }
 function showForm() {
@@ -653,6 +674,7 @@ function showForm() {
     <h3>Bewertung</h3>
     ${CATS.map(([k, l]) => `<div class="rate"><span>${l}</span><span class="r">${stars(k, d.r[k], true)}<span class="n" id="n-${k}">${d.r[k]}/10</span></span></div>`).join('')}
     <p class="small mut" style="margin-top:6px">Linke Sternhälfte = halber Stern. Nochmal auf denselben Wert tippen setzt auf 0.</p>
+    <label class="chk pubchk"><input type="checkbox" id="fPub"${d.pub ? ' checked' : ''}><span><b>Auf der öffentlichen Karte teilen</b><br><span class="small mut">Ohne Fotos. Andere sehen von dir nur dein Profilbild und „${esc(kurz(myName()))}“.${d.pubBy && d.pubBy !== me.uid ? ' Ein anderes Mitglied hat diesen Spot geteilt.' : ''}</span></span></label>
     <div class="row-btns"><button type="button" class="btn" data-act="cancel">Abbrechen</button><button type="submit" class="btn primary">Speichern</button></div>
   </form>`, 'form');
   if (!d.address) autoAddress();
@@ -662,6 +684,7 @@ function syncDraft() {
   draft.name = $('#fName').value.trim();
   draft.desc = $('#fDesc').value.trim();
   draft.address = $('#fAddr').value.trim();
+  const pb = $('#fPub'); if (pb) draft.pub = pb.checked;
 }
 function autoAddress() {
   const d = draft; if (!d) return;
@@ -685,6 +708,7 @@ function showProfile(id, keepView) {
   const r = p.r || {};
   const when = fmtDate(p.updatedAt) || fmtDate(p.createdAt);
   open(`<div class="head">${avatar(p)}<div><h2>${esc(p.name)}</h2><p class="addr">${esc(p.address || 'Keine Adresse')}</p></div></div>
+    ${p.pub ? `<span class="badge">${ico('globe')} Öffentlich geteilt${p.pub !== me.uid ? ' (von einem Mitglied)' : ''}</span>` : ''}
     <div class="score"><b>${clampR(r.g)}</b><div>${stars('g', clampR(r.g))}<small>Gesamt von 10</small></div></div>
     ${CATS.slice(1).map(([k, l]) => `<div class="rate"><span>${l}</span><span class="r">${stars(k, clampR(r[k]))}<span class="n">${clampR(r[k])}/10</span></span></div>`).join('')}
     ${p.desc ? `<p class="desc">${esc(p.desc)}</p>` : '<p class="desc mut">Noch keine Beschreibung.</p>'}
@@ -1103,10 +1127,10 @@ async function connect() {
         userEmail = user.email || ''; if (!registering) document.body.classList.remove('needs-setup');
         // erst wenn das Login-Token bereit ist, Daten abonnieren – sonst lehnt Firestore die ersten Abfragen ab
         Promise.resolve(user.getIdToken ? user.getIdToken() : null).catch(() => {}).then(() => {
-          if (auth.currentUser && auth.currentUser.uid === user.uid) { watchProfile(user); watchKarten(user); }
+          if (auth.currentUser && auth.currentUser.uid === user.uid) { watchProfile(user); watchKarten(user); startPub(); }
         });
       }
-      else { userEmail = ''; stopSync(); stopKarten(); stopProfile(); curKid = ''; LS.del('spots.karte'); showLogin(); }
+      else { userEmail = ''; stopSync(); stopPub(); stopKarten(); stopProfile(); curKid = ''; LS.del('spots.karte'); showLogin(); }
     });
   } catch (e) {
     setStatus('Offline', 'err');
@@ -1596,7 +1620,7 @@ function onSnap(snap) {
   snap.forEach(d => {
     const x = d.data() || {};
     if (!finite(x.lat) || !finite(x.lng)) return;
-    const p = { id: d.id, name: String(x.name || 'Ohne Namen').slice(0, 80), desc: String(x.desc || '').slice(0, 1000), address: String(x.address || '').slice(0, 200), lat: x.lat, lng: x.lng, photo: okPhoto(x.photo) ? x.photo : '', r: (() => { const rr = x.r || {}, sc = x.rs === 10 ? 1 : 2; return { g: clampR((Number(rr.g) || 0) * sc), a: clampR((Number(rr.a) || 0) * sc), u: clampR((Number(rr.u) || 0) * sc) }; })(), fav: Number(x.fav) || 0, createdAt: x.createdAt, updatedAt: x.updatedAt };
+    const p = { id: d.id, name: String(x.name || 'Ohne Namen').slice(0, 80), desc: String(x.desc || '').slice(0, 1000), address: String(x.address || '').slice(0, 200), lat: x.lat, lng: x.lng, photo: okPhoto(x.photo) ? x.photo : '', r: (() => { const rr = x.r || {}, sc = x.rs === 10 ? 1 : 2; return { g: clampR((Number(rr.g) || 0) * sc), a: clampR((Number(rr.a) || 0) * sc), u: clampR((Number(rr.u) || 0) * sc) }; })(), fav: Number(x.fav) || 0, pub: typeof x.pub === 'string' ? x.pub.slice(0, 80) : '', createdAt: x.createdAt, updatedAt: x.updatedAt };
     seen.add(d.id); pins.set(d.id, p); upsertMarker(p);
   });
   for (const id of [...pins.keys()]) if (!seen.has(id)) { pins.delete(id); const m = markers.get(id); if (m) m.remove(); markers.delete(id); }
@@ -1618,7 +1642,8 @@ function savePin() {
   if (!d.name) { toast('Bitte gib dem Spot einen Namen'); $('#fName').focus(); return; }
   if (!fs) { toast('Nicht verbunden'); return; }
   const { F } = fs;
-  const data = { name: d.name, desc: d.desc, address: d.address, lat: d.lat, lng: d.lng, photo: d.photo || '', r: { g: clampR(d.r.g), a: clampR(d.r.a), u: clampR(d.r.u) }, rs: 10, updatedAt: F.serverTimestamp() };
+  const data = { name: d.name, desc: d.desc, address: d.address, lat: d.lat, lng: d.lng, photo: d.photo || '', r: { g: clampR(d.r.g), a: clampR(d.r.a), u: clampR(d.r.u) }, rs: 10, pub: d.pub ? (d.pubBy || me.uid) : null, updatedAt: F.serverTimestamp() };
+  if (d.pub && !d.pubBy) setTimeout(() => toast('Geteilt – erscheint gleich auf der öffentlichen Karte'), 400);
   let id = d.id, pr;
   if (id) pr = F.updateDoc(F.doc(pinCol(), id), data);
   else { const ref = F.doc(pinCol()); id = ref.id; data.createdAt = F.serverTimestamp(); data.by = me.uid; pr = F.setDoc(ref, data); }
@@ -1630,6 +1655,130 @@ function deletePin(id) {
   if (!fs || !id) return;
   fs.F.deleteDoc(fs.F.doc(pinCol(), id)).catch(e => toast('Löschen fehlgeschlagen: ' + errHint(e), 6000));
   closeSheet(); toast('Spot gelöscht');
+}
+
+/* ---------- Öffentliche Karte ---------- */
+// Orte kommen vom Server (orte/), Bewertungen aus oeffentlich/, Profile (Kürzel + Bild) aus profile/.
+const PUB = { on: !!LS.get('spots.pub', false), unsub: null, orte: new Map(), markers: new Map(), prof: new Map(), first: true, fails: 0 };
+const kurz = n => { const z = [...String(n || '')].filter(c => /[\p{L}\p{N}]/u.test(c)); return !z.length ? '?' : z.length === 1 ? z[0].toUpperCase() : z[0].toUpperCase() + '…' + z[z.length - 1].toLowerCase(); };
+const fmtR = v => (Math.round((Number(v) || 0) * 10) / 10).toLocaleString('de-DE');
+const num10 = v => Math.max(0, Math.min(10, Number(v) || 0));
+function ortAus(id, x) {
+  if (!x || !finite(x.lat) || !finite(x.lng)) return null;
+  const r = x.r || {};
+  return { id, lat: x.lat, lng: x.lng, name: String(x.name || 'Ohne Namen').slice(0, 80), address: String(x.address || '').slice(0, 200), n: Math.max(0, Number(x.n) || 0), r: { g: num10(r.g), a: num10(r.a), u: num10(r.u) } };
+}
+function pubIcon(o) { return L.divIcon({ className: 'pin', html: `<div class="pub-b">${o.r.g ? fmtR(o.r.g) : ico('globe')}</div>`, iconSize: [38, 38], iconAnchor: [19, 19] }); }
+function pubBtn() { const b = $('#pubBtn'); if (b) { b.classList.toggle('on', PUB.on); b.setAttribute('aria-pressed', PUB.on ? 'true' : 'false'); } }
+function startPub() {
+  pubBtn();
+  if (!PUB.on || PUB.unsub || !fs || !me.uid || !map) return;
+  const { F } = fs;
+  PUB.unsub = F.onSnapshot(F.collection(fs.db, 'orte'), snap => {
+    PUB.fails = 0;
+    const seen = new Set();
+    snap.forEach(d => {
+      const o = ortAus(d.id, d.data()); if (!o) return;
+      seen.add(o.id); PUB.orte.set(o.id, o);
+      let m = PUB.markers.get(o.id); const sg = o.r.g + '|' + o.n + '|' + o.name;
+      if (!m) { m = L.marker([o.lat, o.lng], { icon: pubIcon(o), title: o.name, zIndexOffset: -500 }).addTo(map); m.on('click', () => showOrt(m._oid)); m._oid = o.id; PUB.markers.set(o.id, m); }
+      else { m.setLatLng([o.lat, o.lng]); if (m._sig !== sg) m.setIcon(pubIcon(o)); }
+      m._sig = sg;
+    });
+    for (const id of [...PUB.orte.keys()]) if (!seen.has(id)) { PUB.orte.delete(id); const m = PUB.markers.get(id); if (m) m.remove(); PUB.markers.delete(id); }
+    if (PUB.first && !snap.metadata.fromCache) { PUB.first = false; if (!PUB.orte.size) toast('Noch keine öffentlichen Spots. Teile einen über „Bearbeiten“.', 4000); }
+  }, err => {
+    PUB.unsub = null; PUB.fails++;
+    if (PUB.fails <= 3 && PUB.on) { setTimeout(startPub, 2000 * PUB.fails); return; }
+    toast('Öffentliche Karte: ' + errHint(err), 5000);
+  });
+}
+function stopPub() {
+  if (PUB.unsub) { PUB.unsub(); PUB.unsub = null; }
+  for (const m of PUB.markers.values()) m.remove();
+  PUB.markers.clear(); PUB.orte.clear(); PUB.prof.clear(); PUB.first = true; pubBtn();
+}
+function togglePub() {
+  PUB.on = !PUB.on; LS.set('spots.pub', PUB.on);
+  if (PUB.on) { startPub(); toast('Öffentliche Karte eingeblendet'); } else { stopPub(); toast('Öffentliche Karte ausgeblendet'); }
+}
+async function ortHolen(oid) {
+  if (PUB.orte.has(oid)) return PUB.orte.get(oid);
+  try { const s = await fs.F.getDoc(fs.F.doc(fs.db, 'orte', oid)); return s.exists() ? ortAus(s.id, s.data()) : null; } catch { return null; }
+}
+async function profil(uid) {
+  if (PUB.prof.has(uid)) return PUB.prof.get(uid);
+  let p = { kurz: '?', photo: '' };
+  try { const s = await fs.F.getDoc(fs.F.doc(fs.db, 'profile', uid)); if (s.exists()) { const x = s.data() || {}; p = { kurz: String(x.kurz || '?').slice(0, 6), photo: okPhoto(x.photo) ? x.photo : '' }; } } catch {}
+  PUB.prof.set(uid, p); return p;
+}
+const pAv = (p, cls) => okPhoto(p.photo) ? `<span class="av ${cls}"><img src="${p.photo}" alt=""></span>` : `<span class="av ${cls}">${esc([...p.kurz][0] || '?')}</span>`;
+function eintragAus(d) {
+  const x = d.data() || {}, r = x.r || {};
+  return { id: d.id, ort: String(x.ort || ''), uid: String(x.uid || ''), name: String(x.name || '').slice(0, 80), desc: String(x.desc || '').slice(0, 1000), r: { g: clampR(r.g), a: clampR(r.a), u: clampR(r.u) }, createdAt: x.createdAt, updatedAt: x.updatedAt };
+}
+async function revHtml(e, ortName) {
+  const p = await profil(e.uid), mine = e.uid === me.uid;
+  const when = fmtDate(e.updatedAt) || fmtDate(e.createdAt);
+  return `<div class="rev"><div class="rev-h"><button class="who" data-act="nutzer-open" data-id="${esc(e.uid)}">${pAv(p, 'xs')}<span>${esc(p.kurz)}${mine ? ' (du)' : ''}<small>${esc(when)}</small></span></button>${stars('g', e.r.g)}</div>
+    ${ortName !== undefined ? `<button class="linkbtn" data-act="ort-open" data-id="${esc(e.ort)}" style="padding:2px 0;min-height:36px">${esc(ortName || e.name)}</button>` : (e.name ? `<b class="rev-t">${esc(e.name)}</b>` : '')}
+    <p class="small mut rev-r">Gesamt ${e.r.g}/10 · Ambiente ${e.r.a}/10 · Ungestört ${e.r.u}/10</p>
+    ${e.desc ? `<p class="desc" style="margin:6px 0">${esc(e.desc)}</p>` : ''}
+    ${mine ? '' : `<button class="linkbtn rev-m" data-act="melden" data-ort="${esc(e.ort)}" data-eid="${esc(e.id)}">${ico('flag')} Melden</button>`}</div>`;
+}
+async function showOrt(oid, keepView) {
+  if (!fs) return;
+  const o = await ortHolen(oid);
+  if (!o) { toast('Dieser Ort ist nicht mehr öffentlich'); return; }
+  if (!keepView) panAbove([o.lat, o.lng]);
+  open(`<div class="head"><span class="av pubav">${ico('globe')}</span><div><h2>${esc(o.name)}</h2><p class="addr">${esc(o.address || 'Keine Adresse')}</p></div></div>
+    <div class="score"><b>${o.r.g ? fmtR(o.r.g) : '–'}</b><div>${stars('g', Math.round(o.r.g))}<small>Durchschnitt aus ${o.n} ${o.n === 1 ? 'Bewertung' : 'Bewertungen'}</small></div></div>
+    ${CATS.slice(1).map(([k, l]) => `<div class="rate"><span>${l}</span><span class="r">${stars(k, Math.round(o.r[k]))}<span class="n">${o.r[k] ? fmtR(o.r[k]) : '–'}</span></span></div>`).join('')}
+    ${navHtml(o.lat, o.lng, o.name)}
+    <h3>Bewertungen</h3><div id="revs"><p class="hint">Lade…</p></div>
+    <button class="linkbtn rev-m ort-m" data-act="melden" data-ort="${esc(o.id)}" data-eid="" style="margin-top:8px">${ico('flag')} Ort melden</button>`, 'ort');
+  openId = oid;
+  try {
+    const { F } = fs;
+    const s = await F.getDocs(F.query(F.collection(fs.db, 'oeffentlich'), F.where('ort', '==', oid)));
+    const list = s.docs.map(eintragAus).sort((a, b) => msOf(b.updatedAt) - msOf(a.updatedAt));
+    const html = (await Promise.all(list.map(e => revHtml(e)))).join('');
+    if (mode === 'ort' && openId === oid) { const el = $('#revs'); if (el) el.innerHTML = html || '<p class="hint">Noch keine Bewertungen.</p>'; }
+  } catch (e) { const el = $('#revs'); if (el && mode === 'ort' && openId === oid) el.innerHTML = `<p class="hint">Bewertungen konnten nicht geladen werden: ${esc(errHint(e))}</p>`; }
+}
+async function showNutzer(uid) {
+  if (!fs || !uid) return;
+  const p = await profil(uid);
+  open(`<div class="head">${pAv(p, '')}<div><h2>${esc(p.kurz)}${uid === me.uid ? ' (du)' : ''}</h2><p class="addr">Öffentliche Bewertungen</p></div></div>
+    <div id="revs"><p class="hint">Lade…</p></div>`, 'nutzer');
+  openId = uid;
+  try {
+    const { F } = fs;
+    const s = await F.getDocs(F.query(F.collection(fs.db, 'oeffentlich'), F.where('uid', '==', uid)));
+    const list = s.docs.map(eintragAus).sort((a, b) => msOf(b.updatedAt) - msOf(a.updatedAt));
+    const orte = await Promise.all(list.map(e => ortHolen(e.ort)));
+    const html = (await Promise.all(list.map((e, i) => revHtml(e, orte[i] ? orte[i].name : '')))).join('');
+    if (mode === 'nutzer' && openId === uid) { const el = $('#revs'); if (el) el.innerHTML = html || '<p class="hint">Keine öffentlichen Bewertungen.</p>'; }
+  } catch (e) { const el = $('#revs'); if (el && mode === 'nutzer' && openId === uid) el.innerHTML = `<p class="hint">Konnte nicht geladen werden: ${esc(errHint(e))}</p>`; }
+}
+const GRUENDE = [['person', 'Erkennbare Person oder Kennzeichen'], ['privat', 'Privatgrundstück oder Wohnadresse'], ['illegal', 'Gefährlich oder verboten'], ['beleidigend', 'Beleidigend oder unangemessen'], ['falsch', 'Falsch oder gibt es nicht mehr'], ['sonstiges', 'Etwas anderes']];
+function showMelden(oid, eid) {
+  if (!oid) return;
+  open(`<form id="meldForm" class="form" data-ort="${esc(oid)}" data-eid="${esc(eid || '')}"><h2>${eid ? 'Bewertung melden' : 'Ort melden'}</h2>
+    <p class="mut">Was stimmt nicht? Jede Meldung wird geprüft. Wer gemeldet wurde, erfährt nicht, von wem.</p>
+    ${GRUENDE.map(([k, l]) => `<label class="chk"><input type="radio" name="grund" value="${k}"><span>${esc(l)}</span></label>`).join('')}
+    <label>Details (freiwillig)<textarea id="mText" maxlength="500" placeholder="Was genau ist das Problem?"></textarea></label>
+    <div class="row-btns"><button type="button" class="btn" data-act="melden-back" data-id="${esc(oid)}">Abbrechen</button><button type="submit" class="btn primary">Melden</button></div></form>`, 'melden');
+}
+async function sendMeldung(form) {
+  const g = form.querySelector('input[name=grund]:checked');
+  if (!g) { toast('Bitte wähle einen Grund'); return; }
+  const { F } = fs;
+  const btn = form.querySelector('[type=submit]'); if (btn) btn.disabled = true;
+  try {
+    await F.addDoc(F.collection(fs.db, 'meldungen'), { ort: form.dataset.ort, eintrag: form.dataset.eid || null, grund: g.value, text: ($('#mText').value || '').trim().slice(0, 500), by: me.uid, createdAt: F.serverTimestamp(), status: 'offen' });
+    closeSheet(); toast('Danke – die Meldung wird geprüft', 3500);
+  } catch (e) { if (btn) btn.disabled = false; toast('Melden fehlgeschlagen: ' + errHint(e), 6000); }
 }
 
 /* ---------- Events ---------- */
@@ -1671,6 +1820,11 @@ document.addEventListener('click', e => {
   else if (a === 'route') showRoute(+b.dataset.lat, +b.dataset.lng, b.dataset.m);
   else if (a === 'route-clear') clearRoute();
   else if (a === 'settings') showSettings();
+  else if (a === 'pub') togglePub();
+  else if (a === 'ort-open') showOrt(b.dataset.id);
+  else if (a === 'nutzer-open') showNutzer(b.dataset.id);
+  else if (a === 'melden') showMelden(b.dataset.ort, b.dataset.eid);
+  else if (a === 'melden-back') showOrt(b.dataset.id, true);
   else if (a === 'style') { setStyle(b.dataset.v); showSettings(); }
   else if (a === 'logout') confirmBox('Abmelden?', 'Die Spots bleiben gespeichert. Zum erneuten Anmelden brauchst du E-Mail und Passwort.', 'Abmelden', 'logout-yes');
   else if (a === 'logout-yes') { closeSheet(); if (fs) fs.Au.signOut(fs.auth); }
@@ -1698,7 +1852,7 @@ document.addEventListener('click', e => {
     const p = pins.get(openId); if (!p) return;
     const id = openId;
     open('', 'form'); openId = null;
-    draft = { id, name: p.name, desc: p.desc, address: p.address, autoAddr: '', lat: p.lat, lng: p.lng, photo: p.photo, r: { g: clampR(p.r.g), a: clampR(p.r.a), u: clampR(p.r.u) } };
+    draft = { id, name: p.name, desc: p.desc, address: p.address, autoAddr: '', lat: p.lat, lng: p.lng, photo: p.photo, r: { g: clampR(p.r.g), a: clampR(p.r.a), u: clampR(p.r.u) }, pub: !!p.pub, pubBy: p.pub || '' };
     showForm();
   }
   else if (a === 'del') { const p = pins.get(openId); if (p) confirmBox(`„${p.name}“ löschen?`, 'Der Spot verschwindet auf allen verbundenen Handys. Das lässt sich nicht rückgängig machen.', 'Löschen', 'del-yes', p.id); }
@@ -1728,6 +1882,7 @@ document.addEventListener('submit', e => {
   else if (e.target.id === 'newKarteForm') createKarte($('#nkName').value);
   else if (e.target.id === 'joinForm') joinWithCode($('#jCode').value);
   else if (e.target.id === 'renameForm') renameKarte($('#rkName').value);
+  else if (e.target.id === 'meldForm') sendMeldung(e.target);
 });
 document.addEventListener('change', async e => {
   if (e.target.id === 'sugTog') {
@@ -1764,7 +1919,7 @@ if (typeof L === 'undefined') {
   connect();
   setTimeout(() => checkUpdate(false), 2500);
   setInterval(() => checkUpdate(false), 10 * 60 * 1000);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { checkUpdate(false); if (fs && fs.auth.currentUser && me.uid && !kartenUnsub) listenKarten(fs.auth.currentUser); } });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { checkUpdate(false); if (fs && fs.auth.currentUser && me.uid && !kartenUnsub) listenKarten(fs.auth.currentUser); if (fs && fs.auth.currentUser && me.uid) startPub(); } });
 }
 }
 </script>

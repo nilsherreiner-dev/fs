@@ -10,7 +10,7 @@
  *
  * Der Brevo-API-Schlüssel liegt als Secret BREVO_KEY in Google Secret Manager.
  */
-const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
 const { defineSecret } = require('firebase-functions/params');
@@ -166,10 +166,129 @@ async function aufraeumen(now = Date.now()) {
     }
     n += old.docs.length;
   }
+  // Erledigte Meldungen nach einem Jahr
+  const yr = Timestamp.fromMillis(now - 365 * 24 * 3600 * 1000);
+  const alt = (await db.collection('meldungen').where('createdAt', '<', yr).get()).docs.filter(d => d.data().status !== 'offen');
+  for (let i = 0; i < alt.length; i += 400) { const b = db.batch(); alt.slice(i, i + 400).forEach(d => b.delete(d.ref)); await b.commit(); }
+  n += alt.length;
   logger.info('Aufgeräumt', { geloescht: n });
   return n;
 }
 exports.aufraeumen = onSchedule({ schedule: 'every day 03:17', timeZone: 'Europe/Berlin' }, () => aufraeumen());
 
+/* ======================================================================
+ * Öffentliche Karte
+ *  - Ein Spot mit Feld pub = <uid> erscheint öffentlich als Eintrag oeffentlich/{eid}
+ *    (ohne Foto, ohne Karten- oder Spot-ID). eid ist ein Hash aus Karte und Spot.
+ *  - Einträge im Umkreis von 50 m landen beim selben Ort orte/{oid}.
+ *  - orte/{oid} hält Anzahl und Durchschnitt der Bewertungen.
+ *  - profile/{uid} ist das öffentliche Profil: nur Profilbild und Kürzel („N…s“).
+ *  - Gesperrte Einträge (gesperrt/{eid}) werden nicht wieder veröffentlicht.
+ * ====================================================================== */
+const RADIUS = 50;
+const eidOf = (kid, pid) => crypto.createHash('sha256').update(kid + '/' + pid).digest('hex').slice(0, 24);
+const finite = v => typeof v === 'number' && isFinite(v);
+const str = (v, n) => String(v || '').trim().slice(0, n);
+const cl10 = v => Math.max(0, Math.min(10, Math.round(Number(v) || 0)));
+const okPhoto = s => typeof s === 'string' && s.length < 400000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(s);
+function kurz(name) {
+  const z = [...String(name || '')].filter(c => /[\p{L}\p{N}]/u.test(c));
+  if (!z.length) return '?';
+  if (z.length === 1) return z[0].toUpperCase();
+  return z[0].toUpperCase() + '…' + z[z.length - 1].toLowerCase();
+}
+function distM(a, b) {
+  const R = 6371000, t = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * t, dLng = (b.lng - a.lng) * t;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * t) * Math.cos(b.lat * t) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+const profilAus = n => ({ kurz: kurz(n.name), photo: okPhoto(n.photo) ? n.photo : '', updatedAt: FieldValue.serverTimestamp() });
+
+async function ortSuchen(p) {
+  const d = RADIUS / 111320;
+  const q = await db.collection('orte').where('lat', '>=', p.lat - d).where('lat', '<=', p.lat + d).get();
+  let best = null, bd = Infinity;
+  q.forEach(x => { const o = x.data(); if (!finite(o.lat) || !finite(o.lng)) return; const m = distM(o, p); if (m <= RADIUS && m < bd) { bd = m; best = x.id; } });
+  if (best) return best;
+  const ref = db.collection('orte').doc();
+  await ref.set({ lat: p.lat, lng: p.lng, name: str(p.name, 80) || 'Ohne Namen', address: str(p.address, 200), n: 0, r: { g: 0, a: 0, u: 0 }, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+  return ref.id;
+}
+
+/* Spot → öffentlicher Eintrag (anlegen, ändern oder entfernen) */
+async function spotSync(kid, pid, p) {
+  const eid = eidOf(kid, pid), ref = db.doc('oeffentlich/' + eid);
+  const cur = await ref.get();
+  const pub = p && typeof p.pub === 'string' && p.pub.length > 0 && p.pub.length < 80 && finite(p.lat) && finite(p.lng) ? p.pub : null;
+  let nutzer = null;
+  if (pub) {
+    const [g, n] = await Promise.all([db.doc('gesperrt/' + eid).get(), db.doc('nutzer/' + pub).get()]);
+    if (!g.exists && n.exists) nutzer = n.data();
+  }
+  if (!nutzer) { if (cur.exists) await ref.delete(); return { eid, status: 'privat' }; }
+  let ort = cur.exists ? cur.data().ort : null;
+  if (ort) { const o = await db.doc('orte/' + ort).get(); if (!o.exists || distM(o.data(), p) > RADIUS) ort = null; }
+  if (!ort) ort = await ortSuchen(p);
+  const r = p.r || {}, sc = p.rs === 10 ? 1 : 2;
+  const data = { ort, uid: pub, name: str(p.name, 80) || 'Ohne Namen', desc: str(p.desc, 1000), r: { g: cl10(r.g * sc), a: cl10(r.a * sc), u: cl10(r.u * sc) }, updatedAt: FieldValue.serverTimestamp() };
+  if (!cur.exists) data.createdAt = FieldValue.serverTimestamp();
+  await ref.set(data, { merge: true });
+  await db.doc('profile/' + pub).set(profilAus(nutzer));
+  return { eid, status: 'oeffentlich', ort };
+}
+
+/* Durchschnitt und Anzahl eines Orts neu berechnen; leere Orte verschwinden */
+async function ortRechnen(oid) {
+  const ref = db.doc('orte/' + oid);
+  const q = await db.collection('oeffentlich').where('ort', '==', oid).get();
+  if (q.empty) { await ref.delete(); return 0; }
+  const sum = { g: 0, a: 0, u: 0 }, cnt = { g: 0, a: 0, u: 0 };
+  q.forEach(d => { const r = d.data().r || {}; for (const k of ['g', 'a', 'u']) if (r[k] > 0) { sum[k] += r[k]; cnt[k]++; } });
+  const r = {}; for (const k of ['g', 'a', 'u']) r[k] = cnt[k] ? Math.round(sum[k] / cnt[k] * 10) / 10 : 0;
+  try { await ref.update({ n: q.size, r, updatedAt: FieldValue.serverTimestamp() }); } catch (e) { if (e.code !== 5) throw e; } // 5 = NOT_FOUND
+  return q.size;
+}
+async function profilAufraeumen(uid) {
+  const q = await db.collection('oeffentlich').where('uid', '==', uid).limit(1).get();
+  if (q.empty) await db.doc('profile/' + uid).delete();
+}
+
+exports.spotGeaendert = onDocumentWritten('karten/{kid}/pins/{pid}', async event => {
+  const a = event.data.after.exists ? event.data.after.data() : null;
+  const b = event.data.before.exists ? event.data.before.data() : null;
+  if (!(a && a.pub) && !(b && b.pub)) return; // war und ist privat → nichts zu tun
+  await spotSync(event.params.kid, event.params.pid, a);
+});
+
+exports.eintragGeaendert = onDocumentWritten('oeffentlich/{eid}', async event => {
+  const b = event.data.before.exists ? event.data.before.data() : null;
+  const a = event.data.after.exists ? event.data.after.data() : null;
+  for (const o of new Set([b && b.ort, a && a.ort].filter(Boolean))) await ortRechnen(o);
+  if (b && b.uid && (!a || a.uid !== b.uid)) await profilAufraeumen(b.uid);
+});
+
+exports.nutzerGeaendert = onDocumentWritten('nutzer/{uid}', async event => {
+  const uid = event.params.uid;
+  if (!event.data.after.exists) { // Konto gelöscht → öffentliche Einträge und Profil weg
+    const q = await db.collection('oeffentlich').where('uid', '==', uid).get();
+    await Promise.all(q.docs.map(d => d.ref.delete()));
+    await db.doc('profile/' + uid).delete();
+    return;
+  }
+  const prof = db.doc('profile/' + uid);
+  if (!(await prof.get()).exists) return; // nur wer etwas öffentlich geteilt hat, hat ein öffentliches Profil
+  await prof.set(profilAus(event.data.after.data() || {}));
+});
+
+exports.neueMeldung = onDocumentCreated({ document: 'meldungen/{id}', secrets: [BREVO_KEY] }, async event => {
+  const d = (event.data && event.data.data()) || {};
+  const o = d.ort ? await db.doc('orte/' + d.ort).get() : null;
+  const name = o && o.exists ? o.data().name : 'unbekannter Ort';
+  const text = `Neue Meldung zu „${name}“ (${d.grund || '?'}).${d.text ? '\n' + d.text : ''}\n\nPrüfen im Code-Tool: ${TOOL_URL}`;
+  const html = `<p>Neue Meldung zu <b>${esc(name)}</b> (${esc(d.grund || '?')}).</p>${d.text ? `<p>${esc(d.text)}</p>` : ''}<p><a href="${TOOL_URL}">Im Code-Tool prüfen</a></p>`;
+  try { await sendMail(ADMIN_MAIL, `FS: Meldung zu ${name}`, html, text); } catch (e) { logger.warn('Meldungs-Mail fehlgeschlagen', e); }
+});
+
 // nur für lokale Tests
-if (process.env.FS_TEST) exports._test = { issue, inviteMail, genCode, aufraeumen };
+if (process.env.FS_TEST) exports._test = { issue, inviteMail, genCode, aufraeumen, spotSync, ortRechnen, kurz, eidOf, distM, profilAufraeumen };

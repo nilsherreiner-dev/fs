@@ -15,6 +15,11 @@ service cloud.firestore {
     function member(kid) { return signedIn() && exists(mitgliedPath(kid, request.auth.uid)); }
     function ownerOf(kid) { return signedIn() && get(kartePath(kid)).data.owner == request.auth.uid; }
     function validName(n) { return n is string && n.size() >= 1 && n.size() <= 40; }
+    function pubOk() {
+      let n = request.resource.data;
+      return !('pub' in n) || n.pub == null || n.pub == request.auth.uid
+        || (resource != null && 'pub' in resource.data && resource.data.pub == n.pub);
+    }
 
     function validProfile(d) {
       return d.keys().hasOnly(['name', 'bio', 'photo', 'code', 'link', 'createdAt', 'updatedAt'])
@@ -43,8 +48,10 @@ service cloud.firestore {
       allow delete: if ownerOf(kid);
 
       // Spots: alle Mitglieder dürfen lesen und schreiben
+      // pub = UID der Person, die den Spot öffentlich geteilt hat – setzen darf man nur sich selbst
       match /pins/{pin} {
-        allow read, write: if member(kid) || (kid == 'main' && legacy());
+        allow read, delete: if member(kid) || (kid == 'main' && legacy());
+        allow create, update: if (member(kid) || (kid == 'main' && legacy())) && pubOk();
       }
 
       // Mitglieder: Dokument-ID = Nutzer-UID
@@ -109,9 +116,37 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/nutzer/$(request.auth.uid)).data.code == code;
     }
 
+    // ---------- Öffentliche Karte (schreibt nur der Server) ----------
+    match /orte/{oid} {
+      allow read: if signedIn();
+      allow delete: if isAdmin();
+    }
+    match /oeffentlich/{eid} {
+      allow read: if signedIn();
+      allow delete: if isAdmin();
+    }
+    match /profile/{uid} {
+      allow read: if signedIn();
+    }
+    match /gesperrt/{eid} {
+      allow read, write: if isAdmin();
+    }
+    match /meldungen/{id} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['ort', 'eintrag', 'grund', 'text', 'by', 'createdAt', 'status'])
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.status == 'offen'
+        && request.resource.data.ort is string && request.resource.data.ort.size() >= 1 && request.resource.data.ort.size() <= 40
+        && (request.resource.data.eintrag == null || (request.resource.data.eintrag is string && request.resource.data.eintrag.size() <= 40))
+        && request.resource.data.grund in ['person', 'privat', 'illegal', 'beleidigend', 'falsch', 'sonstiges']
+        && request.resource.data.text is string && request.resource.data.text.size() <= 500;
+      allow read, update, delete: if isAdmin();
+    }
+
     // ---------- Profile ----------
     match /nutzer/{uid} {
-      allow read: if signedIn();
+      allow read: if signedIn() && (uid == request.auth.uid || isAdmin());
       allow create: if signedIn() && request.auth.uid == uid
         && validProfile(request.resource.data)
         && (
