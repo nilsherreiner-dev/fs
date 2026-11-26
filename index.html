@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-36">
+<meta name="app-version" content="2026.11.26-37">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -163,7 +163,10 @@ div.item{padding:0;gap:4px}
 .favs .item:first-child{border-top:0}
 .hint{color:var(--mut);font-size:14px;background:var(--field);border-radius:14px;padding:12px 14px;margin:4px 0 0}
 .searchrow2{display:flex;gap:8px;align-items:center;margin:18px 0 0;position:relative}
-.sugsearch{display:flex;gap:8px;align-items:center;margin:4px 0 10px}.sugsearch .searchbox{flex:1;margin:0}.sugsearch .btn{flex:none}
+.sugsearch{display:flex;gap:8px;align-items:center;margin:4px 0 10px}
+.sugkm{display:flex;align-items:center;gap:6px;margin:0 0 10px;font-size:14px;color:var(--mut)}.sugkm span{margin-right:4px}
+.sugkm button{border:0;border-radius:999px;min-height:36px;padding:0 14px;background:var(--field);color:var(--ink);font:inherit;font-weight:700;font-size:14px}
+.sugkm button.on{background:var(--acc);color:#fff}.sugsearch .searchbox{flex:1;margin:0}.sugsearch .btn{flex:none}
 .sugplace{display:flex;align-items:center;gap:8px;background:var(--field);border-radius:14px;padding:6px 6px 6px 12px;margin:0 0 10px;font-size:14px}
 .sugplace svg{width:18px;height:18px;color:var(--gold)}.sugplace span{flex:1}.sugplace .linkbtn{min-height:36px;padding:0 8px}
 .searchrow2 .searchbox{flex:1;margin:0}
@@ -249,6 +252,12 @@ body.needs-setup #setup{display:block}
 .badge.wish svg{fill:currentColor}
 .besucht{margin:14px 0 4px}
 .form.offen .ratesec{display:none}
+#intro{position:fixed;inset:0;z-index:2500}
+.introhole{position:absolute;border-radius:999px;box-shadow:0 0 0 9999px rgba(18,9,14,.72),0 0 0 3px var(--acc),0 0 24px rgba(196,69,108,.6);pointer-events:none;transition:all .25s}
+.introbox{position:absolute;background:var(--bg);border-radius:20px;padding:14px 16px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.introbox small{color:var(--mut);font-size:12px}.introbox h3{margin:2px 0 6px;font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:22px}
+.introbox p{margin:0 0 10px;font-size:15px;line-height:1.45}
+.introbtns{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .rate.fehlt{background:rgba(255,122,127,.12);border-radius:12px;padding:8px 10px;box-shadow:0 0 0 1.5px rgba(255,122,127,.6)}
 .rate.fehlt>span:first-child{color:#ff9a9e;font-weight:700}
 .pubwrap{position:relative;display:flex}
@@ -488,6 +497,7 @@ const IC = {
   flag: '<path d="M5 21V4M5 4h12l-2.5 4 2.5 4H5"/>',
   camera: '<path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/>',
   cog: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  download: '<path d="M12 4v11M7 10.5l5 5 5-5M5 19.5h14"/>',
   heart: '<path d="M12 20.3s-8-4.9-8-10.3A4.4 4.4 0 0 1 12 7.4 4.4 4.4 0 0 1 20 10c0 5.4-8 10.3-8 10.3z"/>'
 };
 const STAR = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>';
@@ -1094,6 +1104,74 @@ async function merkToggle(btn) {
   for (const b of document.querySelectorAll(`.merk[data-key="${CSS.escape(key)}"]`)) { const on = !!merkPin(key); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', on ? 'Aus Favoriten entfernen' : 'Zu Favoriten – noch nicht besucht'); }
 }
 
+/* ---------- Datenexport (Art. 20 DSGVO): alles, was zum eigenen Konto gehört, als JSON ---------- */
+function plain(v) {
+  if (v && typeof v.toDate === 'function') { try { return v.toDate().toISOString(); } catch { return null; } }
+  if (Array.isArray(v)) return v.map(plain);
+  if (v && typeof v === 'object') { const o = {}; for (const [k, x] of Object.entries(v)) o[k] = plain(x); return o; }
+  return v;
+}
+async function datenExport() {
+  if (!fs || !me.uid) return;
+  const { F, db } = fs, uid = me.uid;
+  toast('Deine Daten werden gesammelt…', 15000);
+  const docs = s => s.docs.map(d => ({ id: d.id, ...plain(d.data()) }));
+  const sicher = async f => { try { return await f(); } catch { return null; } };
+  try {
+    const nutzer = await sicher(async () => { const d = await F.getDoc(F.doc(db, 'nutzer', uid)); return d.exists() ? plain(d.data()) : null; });
+    const profil = await sicher(async () => { const d = await F.getDoc(F.doc(db, 'profile', uid)); return d.exists() ? plain(d.data()) : null; });
+    const meine = (await sicher(async () => docs(await F.getDocs(F.collection(db, 'nutzer', uid, 'meineKarten'))))) || [];
+    const kids = [...new Set([...meine.map(k => k.id), ...(isLegacy() ? ['main'] : [])])];
+    const karten = [];
+    for (const kid of kids) {
+      const k = await sicher(async () => { const d = await F.getDoc(F.doc(db, 'karten', kid)); return d.exists() ? plain(d.data()) : null; });
+      if (!k) continue;
+      const mitglieder = ((await sicher(async () => docs(await F.getDocs(F.collection(db, 'karten', kid, 'mitglieder'))))) || []).map(m => ({ name: m.name, rolle: m.rolle, seit: m.joinedAt, du: m.id === uid }));
+      const spots = (await sicher(async () => docs(await F.getDocs(F.collection(db, 'karten', kid, 'pins'))))) || [];
+      for (const sp of spots) sp.galerie = ((await sicher(async () => docs(await F.getDocs(F.collection(db, 'karten', kid, 'pins', sp.id, 'bilder'))))) || []).map(b => ({ bild: b.bild, hinzugefuegt: b.createdAt, vonDir: b.by === uid }));
+      karten.push({ id: kid, name: k.name, erstellt: k.createdAt, eigentuemer: k.owner === uid, mitglieder, spots });
+    }
+    const oeffentlich = (await sicher(async () => docs(await F.getDocs(F.query(F.collection(db, 'oeffentlich'), F.where('uid', '==', uid)))))) || [];
+    const fotovorschlaege = (await sicher(async () => docs(await F.getDocs(F.query(F.collection(db, 'ortFotos'), F.where('uid', '==', uid)))))) || [];
+    const push = ((await sicher(async () => docs(await F.getDocs(F.collection(db, 'nutzer', uid, 'push'))))) || []).map(p => ({ geraet: p.geraet, seit: p.createdAt }));
+    const daten = { app: 'GS', version: APP_VERSION, erstellt: new Date().toISOString(), konto: { id: uid, email: userEmail || '' }, profil: nutzer, oeffentlichesProfil: profil, karten, oeffentlicheEintraege: oeffentlich, fotovorschlaege, benachrichtigungen: push, einstellungenAufDiesemGeraet: { kartenstil: LS.get('spots.style', 'abend') } };
+    const name = `gs-meine-daten-${new Date().toISOString().slice(0, 10)}.json`;
+    const file = new File([JSON.stringify(daten, null, 2)], name, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'Meine GS-Daten' }); toast('Datei bereit'); return; } catch (e) { if (e && e.name === 'AbortError') { toast('Abgebrochen'); return; } }
+    }
+    const url = URL.createObjectURL(file), a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    toast(`Heruntergeladen: ${karten.reduce((n, k) => n + k.spots.length, 0)} Spots aus ${karten.length} ${karten.length === 1 ? 'Karte' : 'Karten'}`, 4000);
+  } catch (e) { toast('Export fehlgeschlagen: ' + errHint(e), 6000); }
+}
+
+/* ---------- Einführung beim ersten Start: drei kurze Hinweise ---------- */
+const INTRO = [
+  { sel: '[data-act="add"]', titel: 'Neuer Spot', text: 'Tippe auf Plus, um einen Ort zu speichern. Bewerte ihn mit Sternen und leg Fotos dazu.' },
+  { sel: '#wishBtn', titel: 'Favoriten', text: 'Orte, an denen ihr noch nicht wart. Tippe aufs Herz, um nur sie auf der Karte zu sehen.' },
+  { sel: '#pubBtn', titel: 'Öffentliche Karte', text: 'Lieblingsorte anderer als Herzen: mit Riss unter 5 Punkten, Herz 5–7, Doppelherz ab 7. Darunter erscheint ein Zahnrad zum Filtern.' },
+  { sel: '[data-act="settings"]', titel: 'Einstellungen', text: 'Kartenstil, Benachrichtigungen, deine Daten und dein Konto findest du hier.' }
+];
+let introI = -1;
+function introStart() { if (mode || document.body.classList.contains('needs-setup') || $('#intro')) return; introI = 0; introZeigen(); }
+function introZu() { const el = $('#intro'); if (el) el.remove(); introI = -1; LS.set('spots.intro1', true); }
+function introZeigen() {
+  const st = INTRO[introI], t = st && $(st.sel);
+  if (!st) { introZu(); return; }
+  if (!t || !t.getBoundingClientRect().width) { introI++; introZeigen(); return; }
+  let el = $('#intro');
+  if (!el) { el = document.createElement('div'); el.id = 'intro'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); document.body.appendChild(el); }
+  const r = t.getBoundingClientRect(), unten = r.top < innerHeight / 2, pad = 6;
+  const bw = Math.min(300, innerWidth - 24), bx = Math.max(12, Math.min(innerWidth - bw - 12, r.left + r.width / 2 - bw / 2));
+  el.innerHTML = `<div class="introhole" style="left:${r.left - pad}px;top:${r.top - pad}px;width:${r.width + pad * 2}px;height:${r.height + pad * 2}px"></div>
+    <div class="introbox" style="left:${bx}px;width:${bw}px;${unten ? `top:${r.bottom + 16}px` : `bottom:${innerHeight - r.top + 16}px`}" aria-labelledby="introT">
+      <small>${introI + 1} von ${INTRO.length}</small><h3 id="introT">${st.titel}</h3><p>${st.text}</p>
+      <div class="introbtns"><button class="linkbtn" data-act="intro-zu">Überspringen</button><button class="btn primary" data-act="intro-weiter">${introI === INTRO.length - 1 ? 'Los geht’s' : 'Weiter'}</button></div></div>`;
+  el.querySelector('[data-act="intro-weiter"]').focus();
+}
+
 /* ---------- Navigation & Route ---------- */
 const fmtKm = m => m < 950 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(m < 9500 ? 1 : 0).replace('.', ',') + ' km';
 const fmtMin = s => { const m = Math.max(1, Math.round(s / 60)); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min'; };
@@ -1158,7 +1236,8 @@ const SUG_T = {
   hut: { label: 'Schutzhütte', icon: 'hut' },
   picnic: { label: 'Picknickplatz', icon: 'picnic' }
 };
-const SUG = { items: [], loading: false, err: '', origin: null, originLabel: '', show: LS.get('spots.sugShow', false), layer: null, tj: null, req: 0, place: LS.get('spots.sugPlace', null) };
+const SUG_KM = [3, 5, 10], SUG_MAX = { 3: 40, 5: 60, 10: 100 };
+const SUG = { items: [], loading: false, err: '', origin: null, originLabel: '', show: LS.get('spots.sugShow', false), layer: null, tj: null, req: 0, place: LS.get('spots.sugPlace', null), km: SUG_KM.includes(LS.get('spots.sugKm', 3)) ? LS.get('spots.sugKm', 3) : 3, loadedKm: 0, tiles: new Map() };
 const sugIcon = t => { const i = SUG_T[t].icon; return i.startsWith('<') ? i : ico(i); };
 function distM(a, b) {
   const R = 6371000, toR = Math.PI / 180;
@@ -1178,6 +1257,7 @@ function sugHtml() {
 // Suchfeld: Vorschläge an einem anderen Ort (Ort, PLZ, Gegend) statt am eigenen Standort
 function sugSearchHtml() {
   return `<form id="sugForm" class="sugsearch"><div class="searchbox">${ico('search')}<input id="sugQ" type="search" placeholder="Ort oder PLZ, z. B. Bingen" enterkeyhint="search" autocomplete="off" aria-label="Ort für Vorschläge" value="${SUG.place ? esc(SUG.place.q || '') : ''}"></div><button class="btn primary" type="submit">Suchen</button></form>
+    <div class="sugkm" role="radiogroup" aria-label="Umkreis der Vorschläge"><span>Umkreis</span>${SUG_KM.map(k => `<button type="button" role="radio" aria-checked="${SUG.km === k}" class="${SUG.km === k ? 'on' : ''}" data-act="sug-km" data-km="${k}">${k} km</button>`).join('')}</div>
     ${SUG.place ? `<div class="sugplace">${ico('loc')}<span>Vorschläge rund um <b>${esc(SUG.place.name)}</b></span><button type="button" class="linkbtn" data-act="sug-reset">Zurücksetzen</button></div>` : ''}`;
 }
 async function sugSearch(q) {
@@ -1242,7 +1322,8 @@ function nearRing(pt, ring, maxM) {
 async function loadSuggestions(force, useMap) {
   if (SUG.loading || !map) return;
   const o = await sugOrigin(useMap);
-  if (!force && SUG.origin && SUG.items.length && distM(SUG.origin, o.c) < 1500) { refreshList(); return; }
+  if (!force && SUG.origin && SUG.items.length && SUG.loadedKm === SUG.km && distM(SUG.origin, o.c) < Math.min(1500, SUG.km * 300)) { refreshList(); return; }
+  const km = SUG.km;
   const req = ++SUG.req;
   SUG.loading = true; SUG.err = ''; SUG.origin = o.c; SUG.originLabel = o.label; refreshList();
   try {
@@ -1252,10 +1333,15 @@ async function loadSuggestions(force, useMap) {
     const tpl = SUG.tj.tiles[0], z = 14, n = 2 ** z, [lat, lon] = o.c;
     const cx = Math.floor((lon + 180) / 360 * n);
     const cy = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n);
+    // Kacheln im Kreis um den Ursprung (eine Kachel ist in Deutschland ca. 1,6 km breit)
+    const tileM = 40075016 * Math.cos(lat * Math.PI / 180) / n, k = Math.ceil(km * 1000 / tileM);
     const coords = [];
-    for (let dx = -2; dx <= 2; dx++) for (let dy = -2; dy <= 2; dy++) coords.push([cx + dx, cy + dy]);
+    for (let dx = -k; dx <= k; dx++) for (let dy = -k; dy <= k; dy++) if (Math.hypot(dx, dy) * tileM <= km * 1000 + tileM * 0.75) coords.push([cx + dx, cy + dy]);
     const woods = [], pois = [];
     const take = async ([x, y]) => {
+      const key = x + '/' + y, hit = SUG.tiles.get(key);
+      if (hit) { woods.push(...hit.woods); pois.push(...hit.pois); return; }
+      const lw = [], lp = [];
       try {
         const r = await fetch(tpl.replace('{z}', z).replace('{x}', x).replace('{y}', y));
         if (!r.ok) return;
@@ -1269,7 +1355,7 @@ async function loadSuggestions(force, useMap) {
             const ring = poly[0]; if (ringArea(ring) < 50000) continue; // nur echte Wälder ab ~5 ha
             let a = 180, b = 90, c = -180, d = -90;
             for (const q of ring) { a = Math.min(a, q[0]); b = Math.min(b, q[1]); c = Math.max(c, q[0]); d = Math.max(d, q[1]); }
-            woods.push({ ring, bb: [a, b, c, d] });
+            lw.push({ ring, bb: [a, b, c, d] });
           }
         }
         const pl = t.layers.poi;
@@ -1279,11 +1365,14 @@ async function loadSuggestions(force, useMap) {
           if (!t2 || f.type !== 1) continue;
           const g = f.toGeoJSON(x, y, z).geometry;
           const pt = g.type === 'Point' ? g.coordinates : g.type === 'MultiPoint' ? g.coordinates[0] : null;
-          if (pt) pois.push({ t: t2, pt, name: String(pr.name || pr['name:de'] || '').slice(0, 60) });
+          if (pt) lp.push({ t: t2, pt, name: String(pr.name || pr['name:de'] || '').slice(0, 60) });
         }
+        woods.push(...lw); pois.push(...lp);
+        SUG.tiles.set(key, { woods: lw, pois: lp });
+        if (SUG.tiles.size > 400) SUG.tiles.delete(SUG.tiles.keys().next().value);
       } catch {}
     };
-    for (let i = 0; i < coords.length; i += 8) await Promise.all(coords.slice(i, i + 8).map(take));
+    for (let i = 0; i < coords.length; i += 12) { if (req !== SUG.req) return; await Promise.all(coords.slice(i, i + 12).map(take)); }
     const near = 0.0025;
     const inWood = (pt, maxM) => woods.some(w => pt[0] > w.bb[0] - near && pt[0] < w.bb[2] + near && pt[1] > w.bb[1] - near && pt[1] < w.bb[3] + near && (inRing(pt, w.ring) || nearRing(pt, w.ring, maxM)));
     const out = [];
@@ -1293,17 +1382,19 @@ async function loadSuggestions(force, useMap) {
       const s = { t: p.t, lat: p.pt[1], lng: p.pt[0], inWood: w, name: p.name || SUG_T[p.t].label };
       if (out.some(o2 => o2.t === s.t && distM([o2.lat, o2.lng], [s.lat, s.lng]) < (s.t === 'park' ? 250 : 60))) continue;
       s.d = distM(o.c, [s.lat, s.lng]);
+      if (s.d > km * 1000) continue;
       out.push(s);
     }
     out.sort((a, b) => a.d - b.d);
     if (req !== SUG.req) return;
-    SUG.items = out.slice(0, 40);
+    SUG.items = out.slice(0, SUG_MAX[km] || 40); SUG.loadedKm = km;
     if (!woods.length && !pois.length) SUG.err = 'Kartendaten nicht erreichbar.';
   } catch (e) {
     if (req === SUG.req) SUG.err = 'Vorschläge konnten nicht geladen werden.';
   }
   if (req !== SUG.req) return;
   SUG.loading = false;
+  if (SUG.again) { SUG.again = false; return loadSuggestions(true); }
   refreshList();
   if (SUG.show) drawSugMarkers();
 }
@@ -1342,6 +1433,8 @@ function showSettings() {
     <p class="mut small" style="margin:0 0 4px">Neutral formuliert, ohne Namen des Spots. Auf dem iPhone nur, wenn GS vom Home-Bildschirm geöffnet ist.</p>
     <h3>Konto</h3>
     <p class="mut small" style="margin:0 0 4px">Angemeldet als <b>${esc(userEmail || '–')}</b></p>
+    <button class="btn wide" data-act="export">${ico('download')} Meine Daten herunterladen</button>
+    <p class="mut small" style="margin:4px 0 10px">Alle Karten, Spots, Bewertungen und Fotos als Datei (JSON) – dein Recht auf Datenübertragbarkeit.</p>
     <button class="btn danger wide" data-act="logout">Abmelden</button>
     <button class="linkbtn" data-act="acc-del" style="color:var(--mut);font-weight:500;width:100%">Konto löschen</button>
     <h3>Rechtliches</h3>
@@ -1973,7 +2066,7 @@ function onSnap(snap) {
   for (const id of [...pins.keys()]) if (!seen.has(id)) { pins.delete(id); const m = markers.get(id); if (m) m.remove(); markers.delete(id); }
   const n = sichtPins().length;
   lastSnap = snap; statusText(snap); wishBtn();
-  if (firstSnap) { firstSnap = false; if (n && (!hadView || fitNext)) fitAll(); fitNext = false; if (SUG.show) setTimeout(() => loadSuggestions(false), 800); }
+  if (firstSnap) { firstSnap = false; if (n && (!hadView || fitNext)) fitAll(); fitNext = false; if (SUG.show) setTimeout(() => loadSuggestions(false), 800); if (!LS.get('spots.intro1', false)) setTimeout(introStart, 1200); }
   if (mode === 'profile' && openId) {
     if (!pins.has(openId)) { closeSheet(); toast('Dieser Spot wurde gelöscht'); }
     else if (snap.docChanges({ includeMetadataChanges: false }).some(c => c.doc.id === openId)) { const y = $('#sheet').scrollTop; showProfile(openId, true); $('#sheet').scrollTop = y; }
@@ -2294,6 +2387,7 @@ document.addEventListener('click', e => {
   else if (a === 'sug-here') loadSuggestions(true, true);
   else if (a === 'sug-reload') loadSuggestions(true);
   else if (a === 'sug-reset') sugReset();
+  else if (a === 'sug-km') { const k = +b.dataset.km; if (SUG_KM.includes(k) && k !== SUG.km) { SUG.km = k; LS.set('spots.sugKm', k); if (k === 10) toast('10 km: das Laden dauert etwas länger', 3000); if (SUG.loading) SUG.again = true; else loadSuggestions(true); refreshList(); } }
   else if (a === 'sug-save') { const s = SUG.items[+b.dataset.i]; if (s) { newDraft(s.lat, s.lng, s.addr || ''); draft.name = s.t === 'park' && s.name === SUG_T.park.label ? 'Waldparkplatz' : s.name; showForm(); } }
   else if (a === 'route') showRoute(+b.dataset.lat, +b.dataset.lng, b.dataset.m);
   else if (a === 'route-clear') clearRoute();
@@ -2343,6 +2437,9 @@ document.addEventListener('click', e => {
     toast('Wie war’s? Bewerte den Ort und speichere', 3000);
   }
   else if (a === 'wish') toggleWish();
+  else if (a === 'export') datenExport();
+  else if (a === 'intro-weiter') { introI++; introZeigen(); }
+  else if (a === 'intro-zu') introZu();
   else if (a === 'gal-open') { LB = { pid: openId, i: +b.dataset.i, sure: false }; lbZeigen(); }
   else if (a === 'lb-zu') lbZu();
   else if (a === 'lb-p') { LB.i--; LB.sure = false; lbZeigen(); }
@@ -2405,7 +2502,8 @@ document.addEventListener('input', e => {
     const el = $('#lres'); if (el) el.innerHTML = listBodyHtml();
   } else if (e.target.id === 'fAddr') e.target.dataset.auto = '0';
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (placing) endPlacing(false); else closeSheet(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if ($('#intro')) introZu(); else if (placing) endPlacing(false); else closeSheet(); } });
+window.addEventListener('resize', () => { if (introI >= 0 && $('#intro')) introZeigen(); });
 
 /* ---------- Start ---------- */
 for (const el of document.querySelectorAll('[data-ic]')) el.innerHTML = ico(el.dataset.ic);
