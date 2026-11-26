@@ -3,6 +3,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
+    // Gesperrte Konten dürfen nichts mehr anlegen oder ändern (zusätzlich wird das Login deaktiviert)
+    function aktiv() { return signedIn() && !exists(/databases/$(database)/documents/kontosperren/$(request.auth.uid)); }
     function email() { return request.auth.token.email.lower(); }
     // Admin = Nils' Konto in projekt-fs (fest über die Nutzer-UID, nicht über die E-Mail)
     function isAdmin() { return signedIn() && request.auth.uid == '8Vm4gmz4WzbCMdHwZFsvsXYTIXP2'; }
@@ -22,10 +24,16 @@ service cloud.firestore {
     }
 
     function validProfile(d) {
-      return d.keys().hasOnly(['name', 'bio', 'photo', 'code', 'link', 'createdAt', 'updatedAt'])
+      return d.keys().hasOnly(['name', 'bio', 'photo', 'code', 'link', 'einwilligung', 'createdAt', 'updatedAt'])
         && d.name is string && d.name.size() >= 2 && d.name.size() <= 40
         && (!('bio' in d) || (d.bio is string && d.bio.size() <= 300))
         && (!('photo' in d) || (d.photo is string && d.photo.size() <= 200000));
+    }
+    // Einwilligung (Art. 7 DSGVO): Textversion + Zeitpunkt, Zeitpunkt kommt immer vom Server
+    function validConsent(e) {
+      return e is map && e.keys().hasOnly(['version', 'at'])
+        && e.version is string && e.version.size() >= 1 && e.version.size() <= 20
+        && e.at == request.time;
     }
     function validRequest(d) {
       return d.keys().hasOnly(['email', 'createdAt', 'status'])
@@ -37,7 +45,7 @@ service cloud.firestore {
     // ---------- Karten ----------
     match /karten/{kid} {
       allow read: if member(kid) || (kid == 'main' && legacy());
-      allow create: if signedIn()
+      allow create: if aktiv()
         && request.resource.data.keys().hasOnly(['name', 'owner', 'createdAt'])
         && request.resource.data.owner == request.auth.uid
         && validName(request.resource.data.name)
@@ -51,7 +59,7 @@ service cloud.firestore {
       // pub = UID der Person, die den Spot öffentlich geteilt hat – setzen darf man nur sich selbst
       match /pins/{pin} {
         allow read, delete: if member(kid) || (kid == 'main' && legacy());
-        allow create, update: if (member(kid) || (kid == 'main' && legacy())) && pubOk();
+        allow create, update: if (member(kid) || (kid == 'main' && legacy())) && pubOk() && aktiv();
       }
 
       // Mitglieder: Dokument-ID = Nutzer-UID
@@ -81,7 +89,7 @@ service cloud.firestore {
     match /kartenEinladungen/{code} {
       allow get: if true;                                              // Code prüfen, auch vor der Registrierung
       allow list: if signedIn() && resource.data.by == request.auth.uid;
-      allow create: if signedIn() && code.size() == 8
+      allow create: if aktiv() && code.size() == 8
         && request.resource.data.keys().hasOnly(['karte', 'kartenName', 'by', 'byName', 'createdAt', 'usedBy'])
         && request.resource.data.by == request.auth.uid
         && request.resource.data.usedBy == null
@@ -131,8 +139,22 @@ service cloud.firestore {
     match /gesperrt/{eid} {
       allow read, write: if isAdmin();
     }
+    match /kontosperren/{uid} {
+      allow read, write: if isAdmin();
+    }
     match /meldungen/{id} {
-      allow create: if signedIn()
+      // Meldung ohne Konto über /melden/ (DSA Art. 16): nur diese Felder, alles mit Längenlimit
+      allow create: if request.resource.data.keys().hasOnly(['quelle', 'was', 'text', 'name', 'email', 'gutglaube', 'grund', 'createdAt', 'status'])
+        && request.resource.data.quelle == 'extern'
+        && request.resource.data.grund == 'extern'
+        && request.resource.data.status == 'offen'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.gutglaube == true
+        && request.resource.data.was is string && request.resource.data.was.size() >= 3 && request.resource.data.was.size() <= 500
+        && request.resource.data.text is string && request.resource.data.text.size() >= 10 && request.resource.data.text.size() <= 2000
+        && request.resource.data.name is string && request.resource.data.name.size() <= 80
+        && request.resource.data.email is string && request.resource.data.email.size() <= 120;
+      allow create: if aktiv()
         && request.resource.data.keys().hasOnly(['ort', 'eintrag', 'grund', 'text', 'by', 'createdAt', 'status'])
         && request.resource.data.by == request.auth.uid
         && request.resource.data.createdAt == request.time
@@ -149,6 +171,7 @@ service cloud.firestore {
       allow read: if signedIn() && (uid == request.auth.uid || isAdmin());
       allow create: if signedIn() && request.auth.uid == uid
         && validProfile(request.resource.data)
+        && 'einwilligung' in request.resource.data && validConsent(request.resource.data.einwilligung)
         && (
           (legacy() && !('code' in request.resource.data) && !('link' in request.resource.data))
           || (request.resource.data.code is string
@@ -158,9 +181,12 @@ service cloud.firestore {
               && get(linkPath(request.resource.data.link)).data.usedBy == null
               && getAfter(linkPath(request.resource.data.link)).data.usedBy == uid)
         );
-      allow update: if signedIn() && request.auth.uid == uid
+      allow update: if aktiv() && request.auth.uid == uid
         && validProfile(request.resource.data)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'bio', 'photo', 'updatedAt']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'bio', 'photo', 'updatedAt', 'einwilligung'])
+        && (!('einwilligung' in request.resource.data.diff(resource.data).affectedKeys())
+            || (validConsent(request.resource.data.einwilligung)
+                && (!('einwilligung' in resource.data) || resource.data.einwilligung.version != request.resource.data.einwilligung.version)));
       allow delete: if signedIn() && request.auth.uid == uid;
 
       // Liste der eigenen Karten (nur für einen selbst)

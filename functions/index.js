@@ -10,12 +10,13 @@
  *
  * Der Brevo-API-Schlüssel liegt als Secret BREVO_KEY in Google Secret Manager.
  */
-const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentUpdated, onDocumentWritten, onDocumentDeleted } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
 const { defineSecret } = require('firebase-functions/params');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
 const crypto = require('crypto');
 
 initializeApp();
@@ -24,7 +25,8 @@ setGlobalOptions({ region: 'europe-west3', maxInstances: 3 });
 
 const BREVO_KEY = defineSecret('BREVO_KEY');
 const SENDER = { name: 'GS', email: 'einladung@geheimespots.de' };
-const ADMIN_MAIL = 'nilshrnr@icloud.com';
+// Projekt-Adresse (Weiterleitung). Admin-Mails enthalten keine E-Mail-Adressen von Interessenten.
+const ADMIN_MAIL = 'kontakt@geheimespots.de';
 const APP_URL = 'https://app.geheimespots.de/';
 const TOOL_URL = APP_URL + 'codes/';
 const ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 Zeichen, ohne I/O/0/1
@@ -85,9 +87,31 @@ GS`;
 }
 
 async function notifyAdmin(email, note) {
-  const text = `Neue Anfrage für GS von ${email}.${note ? '\n' + note : ''}\n\nFreigeben im Code-Tool: ${TOOL_URL}`;
-  const html = `<p>Neue Anfrage für GS von <b>${esc(email)}</b>.</p>${note ? `<p>${esc(note)}</p>` : ''}<p><a href="${TOOL_URL}">Im Code-Tool freigeben</a></p>`;
-  try { await sendMail(ADMIN_MAIL, `GS: neue Anfrage von ${email}`, html, text); } catch (e) { logger.warn('Admin-Mail fehlgeschlagen', e); }
+  // bewusst ohne die E-Mail-Adresse – die steht nur im Code-Tool
+  const text = `Es gibt eine neue Anfrage für GS.${note ? '\n' + note : ''}\n\nAnsehen und freigeben im Code-Tool: ${TOOL_URL}`;
+  const html = `<p>Es gibt eine neue Anfrage für GS.</p>${note ? `<p>${esc(note)}</p>` : ''}<p><a href="${TOOL_URL}">Im Code-Tool ansehen und freigeben</a></p>`;
+  try { await sendMail(ADMIN_MAIL, 'GS: neue Anfrage', html, text); } catch (e) { logger.warn('Admin-Mail fehlgeschlagen', e); }
+}
+
+/* Schlichte GS-Mail (Bestätigungen, Entscheidungen, Begründungen) */
+function gsMail(titel, absaetze) {
+  const text = absaetze.join('\n\n') + '\n\nGS – geheime Spots\nkontakt@geheimespots.de';
+  const html = `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="color-scheme" content="dark"></head><body style="margin:0;background:#1c1016;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#f6e9e4">
+<div style="max-width:520px;margin:0 auto;padding:32px 20px">
+  <div style="background:#2b1424;border-radius:22px 22px 0 0;padding:22px 24px 18px"><div style="font-size:16px;font-weight:700;margin:0 0 10px">GS</div><div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:26px;line-height:1.15">${esc(titel)}</div></div>
+  <div style="background:#241520;border-radius:0 0 22px 22px;padding:22px 24px">${absaetze.map(a => `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#e3cfd6;white-space:pre-line">${esc(a)}</p>`).join('')}
+  <p style="margin:6px 0 0;font-size:13px;color:#b89aa8">GS – geheime Spots · kontakt@geheimespots.de</p></div>
+</div></body></html>`;
+  return { html, text };
+}
+async function mailAn(to, betreff, titel, absaetze) {
+  if (!to || !EMAIL_RE.test(to)) return false;
+  const m = gsMail(titel, absaetze);
+  try { await sendMail(to, betreff, m.html, m.text); return true; } catch (e) { logger.warn('Mail fehlgeschlagen', { betreff, e: String(e) }); return false; }
+}
+async function emailVon(uid) {
+  if (!uid) return '';
+  try { return (await getAuth().getUser(uid)).email || ''; } catch { return ''; }
 }
 
 /* Code finden oder anlegen und verschicken */
@@ -174,7 +198,9 @@ async function aufraeumen(now = Date.now()) {
   }
   // Erledigte Meldungen nach einem Jahr
   const yr = Timestamp.fromMillis(now - 365 * 24 * 3600 * 1000);
-  const alt = (await db.collection('meldungen').where('createdAt', '<', yr).get()).docs.filter(d => d.data().status !== 'offen');
+  const tag = now - 24 * 3600 * 1000;
+  const alt = (await db.collection('meldungen').where('createdAt', '<', yr).get()).docs.filter(d => d.data().status !== 'offen')
+    .concat((await db.collection('meldungen').where('status', '==', 'spam').get()).docs.filter(d => { const c = d.data().createdAt; return c && c.toMillis() < tag; }));
   for (let i = 0; i < alt.length; i += 400) { const b = db.batch(); alt.slice(i, i + 400).forEach(d => b.delete(d.ref)); await b.commit(); }
   n += alt.length;
   logger.info('Aufgeräumt', { geloescht: n });
@@ -229,8 +255,8 @@ async function spotSync(kid, pid, p) {
   const pub = p && typeof p.pub === 'string' && p.pub.length > 0 && p.pub.length < 80 && finite(p.lat) && finite(p.lng) ? p.pub : null;
   let nutzer = null;
   if (pub) {
-    const [g, n] = await Promise.all([db.doc('gesperrt/' + eid).get(), db.doc('nutzer/' + pub).get()]);
-    if (!g.exists && n.exists) nutzer = n.data();
+    const [g, n, k] = await Promise.all([db.doc('gesperrt/' + eid).get(), db.doc('nutzer/' + pub).get(), db.doc('kontosperren/' + pub).get()]);
+    if (!g.exists && n.exists && !k.exists) nutzer = n.data();
   }
   if (!nutzer) { if (cur.exists) await ref.delete(); return { eid, status: 'privat' }; }
   let ort = cur.exists ? cur.data().ort : null;
@@ -287,14 +313,100 @@ exports.nutzerGeaendert = onDocumentWritten('nutzer/{uid}', async event => {
   await prof.set(profilAus(event.data.after.data() || {}));
 });
 
+/* ======================================================================
+ * Meldungen und Moderation (DSA Art. 16, 17)
+ *  - Meldungen kommen aus der App (quelle 'app', mit Konto) oder von /melden/ (quelle 'extern', ohne Konto).
+ *  - Meldende bekommen eine Eingangsbestätigung und später die Entscheidung (wenn eine Adresse bekannt ist).
+ *  - Wer gesperrt wird, bekommt eine Begründung mit Hinweis auf Widerspruch.
+ * ====================================================================== */
+const EXTERN_LIMIT_PER_HOUR = 20;
+const GRUND = {
+  person: ['Erkennbare Person oder Kennzeichen', 'Abschnitt 4 der Nutzungsbedingungen (keine Fotos mit erkennbaren Personen oder Kennzeichen)'],
+  privat: ['Privatgrundstück oder Wohnadresse', 'Abschnitt 4 und 4a der Nutzungsbedingungen (keine Wohnadressen, keine Privatgrundstücke ohne Erlaubnis)'],
+  illegal: ['Gefährlich oder verboten', 'Abschnitt 4 und 5 der Nutzungsbedingungen (keine rechtswidrigen Inhalte, Gesetze und Hausrecht beachten)'],
+  beleidigend: ['Beleidigend oder unangemessen', 'Abschnitt 4 und 4a der Nutzungsbedingungen (keine beleidigenden Inhalte, keine sexuellen Details)'],
+  falsch: ['Falsch oder gibt es nicht mehr', 'Abschnitt 4a der Nutzungsbedingungen (öffentliche Angaben müssen zutreffen)'],
+  sonstiges: ['Sonstiges', 'Abschnitt 4a der Nutzungsbedingungen'],
+  extern: ['Meldung von außen', 'Abschnitt 4 und 4a der Nutzungsbedingungen bzw. geltendes Recht']
+};
+const grundText = g => (GRUND[g] || GRUND.sonstiges)[0];
+const regelText = g => (GRUND[g] || GRUND.sonstiges)[1];
+
 exports.neueMeldung = onDocumentCreated({ document: 'meldungen/{id}', secrets: [BREVO_KEY] }, async event => {
+  const snap = event.data; if (!snap) return;
+  const d = snap.data() || {}, ref = snap.ref;
+  const extern = d.quelle === 'extern';
+  if (extern) {
+    // Spam-Bremse für das öffentliche Formular
+    const seit = Timestamp.fromMillis(Date.now() - 3600 * 1000);
+    const n = (await db.collection('meldungen').where('createdAt', '>', seit).get()).docs.filter(x => x.data().quelle === 'extern').length;
+    if (n > EXTERN_LIMIT_PER_HOUR) { await ref.update({ status: 'spam' }); logger.warn('Externe Meldungen gedrosselt', { n }); return; }
+  }
+  let name = 'Meldung ohne Ortsangabe';
+  if (d.ort) { const o = await db.doc('orte/' + d.ort).get(); name = o.exists ? o.data().name : 'Ort nicht mehr öffentlich'; }
+  // Admin: ohne personenbezogene Daten der meldenden Person
+  const text = `Neue Meldung${extern ? ' (ohne Konto)' : ''} zu „${name}“: ${grundText(d.grund)}.\n\nPrüfen im Code-Tool: ${TOOL_URL}`;
+  const html = `<p>Neue Meldung${extern ? ' (ohne Konto)' : ''} zu <b>${esc(name)}</b>: ${esc(grundText(d.grund))}.</p><p><a href="${TOOL_URL}">Im Code-Tool prüfen</a></p>`;
+  try { await sendMail(ADMIN_MAIL, 'GS: neue Meldung', html, text); } catch (e) { logger.warn('Meldungs-Mail fehlgeschlagen', e); }
+  // Eingangsbestätigung an die meldende Person (Art. 16 Abs. 4 DSA)
+  const an = extern ? String(d.email || '') : await emailVon(d.by);
+  if (an) await mailAn(an, 'GS: Deine Meldung ist eingegangen', 'Deine Meldung ist eingegangen.', [
+    `Danke, deine Meldung${d.ort ? ` zu „${name}“` : ''} ist bei uns angekommen. Grund: ${grundText(d.grund)}.`,
+    'Wir prüfen jede Meldung von Hand. Sobald wir entschieden haben, schicken wir dir eine kurze Nachricht.',
+    'Fragen oder Ergänzungen? Antworte einfach auf diese Mail.'
+  ]);
+});
+
+/* Entscheidung an die meldende Person (Art. 16 Abs. 5 DSA) */
+exports.meldungEntschieden = onDocumentUpdated({ document: 'meldungen/{id}', secrets: [BREVO_KEY] }, async event => {
+  const b = event.data.before.data() || {}, a = event.data.after.data() || {};
+  if (b.status !== 'offen' || a.status !== 'erledigt') return;
+  const an = a.quelle === 'extern' ? String(a.email || '') : await emailVon(a.by);
+  if (!an) return;
+  const ergebnis = a.aktion === 'Bewertung gesperrt' ? 'Wir haben die gemeldete Bewertung gesperrt. Sie ist nicht mehr öffentlich sichtbar.'
+    : a.aktion === 'Ort gesperrt' ? 'Wir haben den gemeldeten Ort mit allen Bewertungen gesperrt. Er ist nicht mehr öffentlich sichtbar.'
+    : a.aktion === 'Inhalt entfernt' ? 'Wir haben den gemeldeten Inhalt entfernt.'
+    : a.aktion === 'Konto gesperrt' ? 'Wir haben den Inhalt entfernt und das Konto der verantwortlichen Person gesperrt.'
+    : 'Wir haben die Meldung geprüft und keinen Verstoß gegen geltendes Recht oder unsere Nutzungsbedingungen festgestellt. Der Inhalt bleibt sichtbar.';
+  await mailAn(an, 'GS: Entscheidung zu deiner Meldung', 'Wir haben deine Meldung geprüft.', [
+    ergebnis,
+    ...(a.begruendung ? ['Begründung: ' + a.begruendung] : []),
+    'Die Prüfung erfolgte von Hand, nicht automatisch. Bist du mit der Entscheidung nicht einverstanden, antworte auf diese Mail – wir sehen uns den Fall dann noch einmal an.'
+  ]);
+});
+
+/* Begründung an die Person, deren Eintrag gesperrt wurde (Art. 17 DSA) */
+exports.eintragGesperrt = onDocumentCreated({ document: 'gesperrt/{eid}', secrets: [BREVO_KEY] }, async event => {
   const d = (event.data && event.data.data()) || {};
-  const o = d.ort ? await db.doc('orte/' + d.ort).get() : null;
-  const name = o && o.exists ? o.data().name : 'unbekannter Ort';
-  const text = `Neue Meldung zu „${name}“ (${d.grund || '?'}).${d.text ? '\n' + d.text : ''}\n\nPrüfen im Code-Tool: ${TOOL_URL}`;
-  const html = `<p>Neue Meldung zu <b>${esc(name)}</b> (${esc(d.grund || '?')}).</p>${d.text ? `<p>${esc(d.text)}</p>` : ''}<p><a href="${TOOL_URL}">Im Code-Tool prüfen</a></p>`;
-  try { await sendMail(ADMIN_MAIL, `GS: Meldung zu ${name}`, html, text); } catch (e) { logger.warn('Meldungs-Mail fehlgeschlagen', e); }
+  if (!d.uid || d.stumm) return;
+  const an = await emailVon(d.uid); if (!an) return;
+  await mailAn(an, 'GS: Ein öffentlicher Eintrag wurde gesperrt', 'Ein Eintrag wurde gesperrt.', [
+    `Dein öffentlicher Eintrag „${d.name || 'ohne Namen'}“${d.ortName ? ` am Ort „${d.ortName}“` : ''} ist ab sofort nicht mehr auf der öffentlichen Karte zu sehen und lässt sich nicht erneut teilen. In deiner privaten Karte bleibt der Spot erhalten.`,
+    `Grund: ${grundText(d.grund)}. Grundlage: ${regelText(d.grund)}.`,
+    ...(d.begruendung ? ['Was wir festgestellt haben: ' + d.begruendung] : []),
+    'Die Entscheidung haben wir nach einer Meldung von Hand getroffen, nicht automatisch.',
+    'Du kannst widersprechen: Antworte einfach auf diese Mail oder schreib an kontakt@geheimespots.de. Wir prüfen den Fall dann erneut. Außerdem stehen dir außergerichtliche Streitbeilegung und der Rechtsweg offen.'
+  ]);
+});
+
+/* Kontosperre: Konto deaktivieren, öffentliche Einträge entfernen, Begründung schicken */
+exports.kontoGesperrt = onDocumentCreated({ document: 'kontosperren/{uid}', secrets: [BREVO_KEY] }, async event => {
+  const uid = event.params.uid, d = (event.data && event.data.data()) || {};
+  const an = await emailVon(uid);
+  try { await getAuth().updateUser(uid, { disabled: true }); await getAuth().revokeRefreshTokens(uid); } catch (e) { logger.warn('Konto deaktivieren fehlgeschlagen', String(e)); }
+  const q = await db.collection('oeffentlich').where('uid', '==', uid).get();
+  for (const x of q.docs) { await db.doc('gesperrt/' + x.id).set({ uid, ort: x.data().ort, name: x.data().name || '', grund: d.grund || 'sonstiges', konto: true, stumm: true, at: FieldValue.serverTimestamp() }); await x.ref.delete(); }
+  if (an) await mailAn(an, 'GS: Dein Konto wurde gesperrt', 'Dein Konto wurde gesperrt.', [
+    'Wir haben dein GS-Konto gesperrt. Du kannst dich nicht mehr anmelden, und deine öffentlichen Einträge sind nicht mehr sichtbar.',
+    `Grund: ${grundText(d.grund)}. Grundlage: ${regelText(d.grund)} sowie Abschnitt 6 (Sperrung bei wiederholten oder schweren Verstößen).`,
+    ...(d.begruendung ? ['Was wir festgestellt haben: ' + d.begruendung] : []),
+    'Die Entscheidung haben wir von Hand getroffen, nicht automatisch.',
+    'Du kannst widersprechen: Antworte einfach auf diese Mail oder schreib an kontakt@geheimespots.de. Wir prüfen den Fall dann erneut. Außerdem stehen dir außergerichtliche Streitbeilegung und der Rechtsweg offen. Möchtest du stattdessen, dass wir dein Konto und alle Daten löschen, schreib uns das ebenfalls.'
+  ]);
+});
+exports.kontoEntsperrt = onDocumentDeleted('kontosperren/{uid}', async event => {
+  try { await getAuth().updateUser(event.params.uid, { disabled: false }); } catch (e) { logger.warn('Konto entsperren fehlgeschlagen', String(e)); }
 });
 
 // nur für lokale Tests
-if (process.env.FS_TEST) exports._test = { issue, inviteMail, genCode, aufraeumen, spotSync, ortRechnen, kurz, eidOf, distM, profilAufraeumen };
+if (process.env.FS_TEST) exports._test = { issue, inviteMail, genCode, aufraeumen, spotSync, ortRechnen, kurz, eidOf, distM, profilAufraeumen, gsMail };

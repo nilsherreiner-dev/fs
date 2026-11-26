@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1c1016">
+<title>GS – Inhalt melden</title>
+<link rel="icon" href="../icon-192.png">
+<link rel="stylesheet" href="../lib/fonts.css">
+<style>
+:root{--nacht:#1c1016;--wein:#6b2440;--koralle:#f2542d;--kerze:#ffb46b;--haut:#f6e9e4;--rauch:#b89aa8;--feld:rgba(246,233,228,.07);--linie:rgba(246,233,228,.14);color-scheme:dark}
+*{box-sizing:border-box}
+html{background:var(--nacht)}
+html,body{margin:0;min-height:100%}
+body{font:17px/1.6 'DM Sans',system-ui,-apple-system,sans-serif;color:var(--haut);-webkit-font-smoothing:antialiased;padding:calc(env(safe-area-inset-top) + 22px) 20px calc(env(safe-area-inset-bottom) + 32px);background:radial-gradient(120% 60% at 85% 0%,#4a1f36 0%,#2b1424 45%,var(--nacht) 85%) no-repeat;min-height:100vh}
+.wrap{max-width:460px;margin:0 auto}
+.marke{display:inline-block;font-weight:700;letter-spacing:.02em;font-size:18px;color:var(--haut);text-decoration:none;margin-bottom:26px}
+.hero{margin:0 0 26px}
+.hero svg{width:120px;height:92px;display:block;margin-bottom:16px;overflow:visible}
+.hero h1{font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;font-size:clamp(40px,11vw,54px);line-height:1.02;letter-spacing:-.02em;margin:0 0 12px}
+.hero p{margin:0;color:#e3cfd6}
+.card{background:rgba(36,21,32,.75);border-radius:24px;padding:24px 20px;box-shadow:inset 0 0 0 1px var(--linie),0 20px 60px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+label{display:block;font-size:15px;font-weight:500;color:var(--rauch);margin-bottom:16px}
+input[type=email],input[type=text],textarea{display:block;width:100%;margin-top:6px;font:inherit;font-size:16px;color:var(--haut);background:var(--feld);border:1.5px solid var(--linie);border-radius:14px;padding:13px 14px;outline:none;-webkit-appearance:none;appearance:none}
+input[type=email]:focus,input[type=text]:focus,textarea:focus{border-color:var(--koralle)}
+.chk{display:flex;gap:12px;align-items:flex-start;color:var(--haut);font-size:15px;font-weight:400}
+.chk a{color:var(--kerze)}
+.chk input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--koralle)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+button{width:100%;min-height:52px;border:0;border-radius:999px;background:var(--koralle);color:#fff;font:inherit;font-weight:700;font-size:17px;margin-top:8px;cursor:pointer;box-shadow:0 8px 30px rgba(242,84,45,.35)}
+button:disabled{opacity:.6}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--kerze);outline-offset:2px}
+.err{color:#ff7a7f;font-weight:500;min-height:1.5em;margin:10px 0 0}
+.small{font-size:14px;color:var(--rauch);margin:14px 0 0}
+.done{display:none;padding:6px 0}
+.done b{display:block;font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;font-size:32px;margin-bottom:6px}
+.done p{color:#e3cfd6;margin:0}
+body.sent form{display:none}body.sent .done{display:block}
+.unten{text-align:center;margin:22px 0 0;font-size:15px}
+.unten a{color:var(--haut);font-weight:700}
+.recht{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 18px;margin:12px 0 0;font-size:14px}
+.recht a{color:var(--rauch);text-decoration:none}
+textarea{min-height:110px;resize:vertical;line-height:1.5}
+.hint{font-size:13px;color:var(--rauch);font-weight:400;display:block;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="marke" href="../start/">GS</a>
+  <div class="hero">
+    <h1>Inhalt melden</h1>
+    <p>Du hast auf der öffentlichen Karte von GS einen Ort oder eine Bewertung gesehen, die rechtswidrig ist oder gegen unsere Regeln verstößt? Sag uns Bescheid – auch ohne Konto. Wir prüfen jede Meldung von Hand.</p>
+  </div>
+  <div class="card">
+    <form id="f" novalidate>
+      <label>Was meldest du?<textarea id="was" maxlength="500" required placeholder="Name des Orts, Adresse oder Gegend, ggf. Kürzel der Person (z. B. „N…s“)"></textarea><span class="hint">So genau wie möglich, damit wir den Inhalt finden.</span></label>
+      <label>Warum ist der Inhalt rechtswidrig oder unzulässig?<textarea id="text" maxlength="2000" required placeholder="z. B. Wohnadresse einer Person, Privatgrundstück, Spielplatz in der Nähe, beleidigender Text …"></textarea></label>
+      <label>Dein Name <span class="hint" style="display:inline">(freiwillig)</span><input id="name" type="text" maxlength="80" autocomplete="name"></label>
+      <label>Deine E-Mail <span class="hint" style="display:inline">(freiwillig – nur dann bekommst du eine Bestätigung und unsere Entscheidung)</span><input id="em" type="email" maxlength="120" autocomplete="email" autocapitalize="off" spellcheck="false" inputmode="email"></label>
+      <div class="hp" aria-hidden="true"><label>Website<input id="hp" type="text" tabindex="-1" autocomplete="off"></label></div>
+      <label class="chk"><input type="checkbox" id="gut"><span>Ich bin in gutem Glauben davon überzeugt, dass meine Angaben richtig und vollständig sind.</span></label>
+      <button type="submit" id="btn">Meldung absenden</button>
+      <p class="err" id="err" role="alert"></p>
+      <p class="small">Deine Angaben nutzen wir nur, um die Meldung zu bearbeiten und dir zu antworten. Die gemeldete Person erfährt nicht, wer gemeldet hat. Mehr in der <a href="../rechtliches/datenschutz.html" style="color:var(--kerze)">Datenschutzerklärung</a>. Für Behörden: kontakt@geheimespots.de (Deutsch, Englisch).</p>
+    </form>
+    <div class="done" role="status">
+      <b>Danke.</b>
+      <p>Deine Meldung ist angekommen. Wir prüfen sie von Hand. Hast du eine E-Mail angegeben, bekommst du gleich eine Bestätigung und später unsere Entscheidung.</p>
+    </div>
+  </div>
+  <p class="recht"><a href="../start/">Startseite</a><a href="../rechtliches/nutzungsbedingungen.html">Nutzungsbedingungen</a><a href="../rechtliches/datenschutz.html">Datenschutz</a><a href="../rechtliches/impressum.html">Impressum</a></p>
+</div>
+<script type="module">
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBi8vKQETOYjboNPN72zPrSsuZQLUGOKqI',
+  authDomain: 'projekt-fs.firebaseapp.com',
+  projectId: 'projekt-fs',
+  storageBucket: 'projekt-fs.firebasestorage.app',
+  messagingSenderId: '1009677457222',
+  appId: '1:1009677457222:web:c3eb3d2029ccc804503747'
+};
+const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const $ = s => document.querySelector(s);
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+let fs = null;
+async function db() {
+  if (fs) return fs;
+  const [A, F] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-firestore.js')]);
+  const app = A.initializeApp(FIREBASE_CONFIG);
+  fs = { F, db: F.getFirestore(app) };
+  return fs;
+}
+$('#f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const err = $('#err'), btn = $('#btn');
+  if ($('#hp').value) { document.body.classList.add('sent'); return; }
+  const was = $('#was').value.trim(), text = $('#text').value.trim(), name = $('#name').value.trim(), email = $('#em').value.trim().toLowerCase();
+  if (was.length < 3) { err.textContent = 'Bitte beschreibe, was du meldest.'; $('#was').focus(); return; }
+  if (text.length < 10) { err.textContent = 'Bitte erkläre kurz, warum der Inhalt rechtswidrig oder unzulässig ist.'; $('#text').focus(); return; }
+  if (email && !EMAIL_RE.test(email)) { err.textContent = 'Diese E-Mail-Adresse sieht nicht richtig aus.'; $('#em').focus(); return; }
+  if (!$('#gut').checked) { err.textContent = 'Bitte bestätige, dass deine Angaben nach bestem Wissen richtig sind.'; return; }
+  try { const last = Number(localStorage.getItem('gs.melden') || 0); if (Date.now() - last < 60000) { err.textContent = 'Bitte warte eine Minute bis zur nächsten Meldung.'; return; } } catch {}
+  err.textContent = ''; btn.disabled = true; btn.textContent = 'Wird gesendet…';
+  try {
+    const { F, db: d } = await db();
+    await F.addDoc(F.collection(d, 'meldungen'), { quelle: 'extern', grund: 'extern', was: was.slice(0, 500), text: text.slice(0, 2000), name: name.slice(0, 80), email: email.slice(0, 120), gutglaube: true, createdAt: F.serverTimestamp(), status: 'offen' });
+    try { localStorage.setItem('gs.melden', String(Date.now())); } catch {}
+    document.body.classList.add('sent');
+  } catch (e2) {
+    err.textContent = 'Senden fehlgeschlagen. Bitte später nochmal versuchen oder an kontakt@geheimespots.de schreiben.';
+    btn.disabled = false; btn.textContent = 'Meldung absenden';
+  }
+});
+</script>
+</body>
+</html>

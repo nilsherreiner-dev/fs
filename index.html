@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-21">
+<meta name="app-version" content="2026.11.26-22">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -399,7 +399,6 @@ function buildStyle(P) {
     layers: L
   };
 }
-const FALLBACK = { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles © Esri' };
 const styleCache = {};
 let styleReq = 0;
 const CATS = [['g', 'Gesamt'], ['a', 'Ambiente'], ['u', 'Ungestört']];
@@ -579,9 +578,13 @@ async function setStyle(k) {
     wireImages(layer.getMaplibreMap && layer.getMaplibreMap());
   } catch (e) {
     if (req !== styleReq) return;
-    if (tiles && tiles !== layer) map.removeLayer(tiles);
     if (layer && map.hasLayer(layer)) map.removeLayer(layer);
-    tiles = L.tileLayer(FALLBACK.url, { maxNativeZoom: 16, maxZoom: 20, attribution: FALLBACK.attr }).addTo(map);
+    // Keine fremde Ersatzkarte: Stil aus dem Netz nicht erreichbar → eigener Stil „Abend“; sonst Hinweis und später neu versuchen
+    if (!STYLES[k].pal && typeof maplibregl !== 'undefined' && L.maplibreGL) {
+      try { layer = L.maplibreGL({ style: buildStyle(PAL.abend), attribution: ATTR, attributionControl: false }); if (tiles) map.removeLayer(tiles); tiles = layer.addTo(map); wireImages(layer.getMaplibreMap && layer.getMaplibreMap()); return; } catch {}
+    }
+    toast('Karte gerade nicht erreichbar – neuer Versuch gleich', 4000);
+    setTimeout(() => { if (req === styleReq) setStyle(document.body.dataset.mapstyle); }, 15000);
   }
 }
 function pinIcon(p) {
@@ -1064,7 +1067,7 @@ function showSettings() {
     <button class="btn danger wide" data-act="logout">Abmelden</button>
     <button class="linkbtn" data-act="acc-del" style="color:var(--mut);font-weight:500;width:100%">Konto löschen</button>
     <h3>Rechtliches</h3>
-    <p class="small" style="margin:0 0 4px"><a href="rechtliches/datenschutz.html" target="_blank" rel="noopener" style="color:var(--acc)">Datenschutz</a> · <a href="rechtliches/nutzungsbedingungen.html" target="_blank" rel="noopener" style="color:var(--acc)">Nutzungsbedingungen</a> · <a href="rechtliches/impressum.html" target="_blank" rel="noopener" style="color:var(--acc)">Impressum</a></p>
+    <p class="small" style="margin:0 0 4px"><a href="rechtliches/datenschutz.html" target="_blank" rel="noopener" style="color:var(--acc)">Datenschutz</a> · <a href="rechtliches/nutzungsbedingungen.html" target="_blank" rel="noopener" style="color:var(--acc)">Nutzungsbedingungen</a> · <a href="rechtliches/impressum.html" target="_blank" rel="noopener" style="color:var(--acc)">Impressum</a> · <a href="melden/" target="_blank" rel="noopener" style="color:var(--acc)">Inhalt melden</a></p>
     <h3>App</h3>
     <p class="mut small" style="margin:0 0 4px">Version ${esc(APP_VERSION)} · Updates werden automatisch geladen.</p>
     <button class="btn wide" data-act="checkupdate">Jetzt nach Updates suchen</button>`, 'settings');
@@ -1164,6 +1167,7 @@ async function login() {
     const c = e && e.code || '';
     err.textContent = /invalid-credential|wrong-password|user-not-found|invalid-email/.test(c) ? 'E-Mail oder Passwort stimmt nicht.'
       : c.includes('too-many-requests') ? 'Zu viele Versuche – bitte kurz warten.'
+    : c.includes('user-disabled') ? 'Dieses Konto ist gesperrt. Die Begründung haben wir dir per Mail geschickt. Widerspruch an kontakt@geheimespots.de.'
       : c.includes('network') ? 'Keine Internetverbindung.'
       : c.includes('operation-not-allowed') ? 'E-Mail-Anmeldung ist in Firebase noch nicht aktiviert.'
       : 'Anmeldung fehlgeschlagen: ' + (e && e.message || c);
@@ -1177,14 +1181,14 @@ function setupMode(m, msg) {
   const name = `<label>Dein Name in der App<input id="rgName" maxlength="40" autocomplete="nickname" placeholder="Spitzname oder Vorname"></label>`;
   const email = `<label>E-Mail<input id="lgEmail" type="email" autocomplete="username" autocapitalize="off" spellcheck="false" inputmode="email"></label>`;
   const pw = nw => `<label>Passwort<input id="lgPw" type="password" autocomplete="${nw ? 'new-password' : 'current-password'}"${nw ? ' minlength="6" placeholder="mindestens 6 Zeichen"' : ''}></label>`;
-  const age = `<label class="chk"><input type="checkbox" id="rgAge"><span>Ich bin mindestens 18 Jahre alt.</span></label>
-    <label class="chk"><input type="checkbox" id="rgOk"><span>Ich akzeptiere die <a href="rechtliches/nutzungsbedingungen.html" target="_blank" rel="noopener">Nutzungsbedingungen</a> und willige ein, dass meine Orte und Bewertungen verarbeitet werden, auch wenn sie Rückschlüsse auf mein Privat- und Intimleben zulassen (<a href="rechtliches/datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a>).</span></label>`;
+  const age = consentHtml();
   const ask = '<br><a class="linkbtn" href="anfrage/" style="text-decoration:none;display:inline-block">Noch keinen Code? Zugang anfragen</a>';
   const sw = (t, m2, l) => `${t} <button type="button" class="linkbtn" data-act="setup-mode" data-m="${m2}">${l}</button>`;
   const V = {
     login: ['Eure gemeinsame Karte. Einmal anmelden – danach bleibt die App auf diesem Handy angemeldet, auch nach Updates.', email + pw(false), 'Anmelden', sw('Neu hier?', 'register', 'Mit Einladungscode registrieren')],
     register: ['Registrieren geht mit einem Einladungscode – oder mit dem Code von deinem Partner.', code + name + email + pw(true) + age, 'Konto erstellen', sw('Schon ein Konto?', 'login', 'Anmelden') + ask],
-    code: ['Dein Konto ist noch nicht freigeschaltet. Gib deinen Einladungscode oder den Code von deinem Partner ein.', code + name + age, 'Freischalten', '<button type="button" class="linkbtn" data-act="setup-logout">Abmelden</button>' + ask]
+    code: ['Dein Konto ist noch nicht freigeschaltet. Gib deinen Einladungscode oder den Code von deinem Partner ein.', code + name + age, 'Freischalten', '<button type="button" class="linkbtn" data-act="setup-logout">Abmelden</button>' + ask],
+    consent: ['Wir haben die Einwilligung in die Datenverarbeitung neu und einzeln formuliert. Bitte bestätige sie einmal – deine Karten und Spots bleiben, wie sie sind.', age, 'Bestätigen und weiter', '<button type="button" class="linkbtn" data-act="setup-logout">Abmelden</button>']
   }[m];
   $('#setupIntro').textContent = V[0];
   $('#setupFields').innerHTML = V[1];
@@ -1200,15 +1204,40 @@ function submitSetup() {
   if (!fs) { $('#setupErr').textContent = 'Noch keine Verbindung – kurz warten und nochmal versuchen.'; connect(); return; }
   if (setupM === 'register') register();
   else if (setupM === 'code') redeem();
+  else if (setupM === 'consent') saveConsent();
   else login();
 }
 function readInvite(noCode) {
   const code = normCode($('#rgCode').value), name = $('#rgName').value.trim().replace(/\s+/g, ' ');
   if (!noCode && code.length !== 8) throw new Error('Bitte den Einladungscode vollständig eingeben (8 Zeichen).');
   if (name.length < 2) throw new Error('Bitte gib einen Namen mit mindestens 2 Zeichen ein.');
-  if (!$('#rgAge').checked) throw new Error('Die App ist erst ab 18 Jahren.');
-  if (!$('#rgOk') || !$('#rgOk').checked) throw new Error('Bitte stimme den Nutzungsbedingungen und der Datenverarbeitung zu.');
+  checkConsent();
   return { code, name };
+}
+/* Einwilligung (Art. 7, Art. 9 Abs. 2 lit. a DSGVO): drei getrennte Häkchen, Version + Zeitpunkt im Nutzerprofil */
+const CONSENT_VERSION = '2026-11-26';
+function consentHtml() {
+  return `<label class="chk"><input type="checkbox" id="rgAge"><span>Ich bin mindestens 18 Jahre alt.</span></label>
+    <label class="chk"><input type="checkbox" id="rgAgb"><span>Ich akzeptiere die <a href="rechtliches/nutzungsbedingungen.html" target="_blank" rel="noopener">Nutzungsbedingungen</a>.</span></label>
+    <label class="chk"><input type="checkbox" id="rgArt9"><span>Ich willige ausdrücklich ein, dass GS meine Orte, Beschreibungen und Bewertungen speichert und den Mitgliedern meiner Karten zeigt – auch wenn sie Rückschlüsse auf mein Privat- und Intimleben zulassen (Art. 9 Abs. 2 lit. a DSGVO). Ich kann die Einwilligung jederzeit widerrufen, indem ich mein Konto lösche oder an kontakt@geheimespots.de schreibe. Mehr in der <a href="rechtliches/datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a>.</span></label>`;
+}
+function checkConsent() {
+  if (!$('#rgAge') || !$('#rgAge').checked) throw new Error('Die App ist erst ab 18 Jahren.');
+  if (!$('#rgAgb') || !$('#rgAgb').checked) throw new Error('Bitte akzeptiere die Nutzungsbedingungen.');
+  if (!$('#rgArt9') || !$('#rgArt9').checked) throw new Error('Ohne deine Einwilligung in die Verarbeitung deiner Orte kann GS nicht funktionieren.');
+}
+const consentData = () => ({ version: CONSENT_VERSION, at: fs.F.serverTimestamp() });
+async function saveConsent() {
+  const err = $('#setupErr');
+  try { checkConsent(); } catch (e) { err.textContent = e.message; return; }
+  if (!fs || !me.uid) return;
+  err.textContent = ''; setupBusy(true, 'Wird gespeichert…');
+  try {
+    await fs.F.updateDoc(fs.F.doc(fs.db, 'nutzer', me.uid), { einwilligung: consentData(), updatedAt: fs.F.serverTimestamp() });
+    document.body.classList.remove('needs-setup'); setupMode('login');
+    toast('Danke – gespeichert');
+  } catch (e) { err.textContent = 'Speichern fehlgeschlagen: ' + errHint(e); }
+  finally { setupBusy(false); }
 }
 async function checkInvite(code) {
   // Einladungscode (Zugang zur App) oder Partner-Code (Zugang + Beitritt zu einer Karte)
@@ -1238,10 +1267,10 @@ async function claimInvite(uid, code, name, info) {
   // Profil anlegen und Code einlösen in einem Schritt – die Firestore-Regeln prüfen beides zusammen
   const { F, db } = fs, b = F.writeBatch(db), ts = F.serverTimestamp();
   if (info && info.type === 'karte') {
-    b.set(F.doc(db, 'nutzer', uid), { name, bio: '', photo: '', link: code, createdAt: ts, updatedAt: ts });
+    b.set(F.doc(db, 'nutzer', uid), { name, bio: '', photo: '', link: code, einwilligung: consentData(), createdAt: ts, updatedAt: ts });
     addJoin(b, uid, code, info, name);
   } else {
-    b.set(F.doc(db, 'nutzer', uid), { name, bio: '', photo: '', code, createdAt: ts, updatedAt: ts });
+    b.set(F.doc(db, 'nutzer', uid), { name, bio: '', photo: '', code, einwilligung: consentData(), createdAt: ts, updatedAt: ts });
     b.update(F.doc(db, 'einladungen', code), { usedBy: uid, usedAt: ts });
   }
   await b.commit();
@@ -1255,6 +1284,7 @@ function authMsg(e) {
     : c.includes('invalid-email') ? 'Diese E-Mail-Adresse ist ungültig.'
     : c.includes('network') || c === 'unavailable' ? 'Keine Internetverbindung.'
     : c.includes('too-many-requests') ? 'Zu viele Versuche – bitte kurz warten.'
+    : c.includes('user-disabled') ? 'Dieses Konto ist gesperrt. Die Begründung haben wir dir per Mail geschickt. Widerspruch an kontakt@geheimespots.de.'
     : c === 'permission-denied' ? 'Der Code ist ungültig oder wurde gerade schon benutzt.'
     : 'Fehlgeschlagen: ' + (e.message || c);
 }
@@ -1271,7 +1301,7 @@ async function register() {
   try {
     const info = first ? null : await checkInvite(inv.code);
     user = (await fs.Au.createUserWithEmailAndPassword(fs.auth, email, pw)).user;
-    if (first) { const { F } = fs; await F.setDoc(F.doc(fs.db, 'nutzer', user.uid), { name: inv.name, bio: '', photo: '', createdAt: F.serverTimestamp(), updatedAt: F.serverTimestamp() }); }
+    if (first) { const { F } = fs; await F.setDoc(F.doc(fs.db, 'nutzer', user.uid), { name: inv.name, bio: '', photo: '', einwilligung: consentData(), createdAt: F.serverTimestamp(), updatedAt: F.serverTimestamp() }); }
     else await claimInvite(user.uid, inv.code, inv.name, info);
     $('#lgPw').value = '';
     registering = false;
@@ -1307,7 +1337,13 @@ function watchProfile(user) {
     if (snap.exists()) {
       const x = snap.data() || {};
       me.profile = { name: String(x.name || '').slice(0, 40), bio: String(x.bio || '').slice(0, 300), photo: okPhoto(x.photo) ? x.photo : '' };
-      if (setupM === 'code' && document.body.classList.contains('needs-setup')) { document.body.classList.remove('needs-setup'); setupMode('login'); }
+      const ew = x.einwilligung;
+      if (!snap.metadata.hasPendingWrites && !(ew && ew.version === CONSENT_VERSION)) {
+        // Altkonto oder neue Textversion: einmal neu fragen, bevor es weitergeht
+        if (setupM !== 'consent') { document.body.classList.add('needs-setup'); setupMode('consent'); }
+        return;
+      }
+      if ((setupM === 'code' || setupM === 'consent') && document.body.classList.contains('needs-setup')) { document.body.classList.remove('needs-setup'); setupMode('login'); }
       maybeOnboard();
       return;
     }
@@ -1327,6 +1363,7 @@ function showProfileForm(first) {
     ${d.photo ? '<button type="button" class="linkbtn" data-act="prof-rmphoto" style="margin:-8px 0 8px">Bild entfernen</button>' : ''}
     <label>Name in der App<input id="pName" maxlength="40" value="${esc(d.name)}" placeholder="Spitzname oder Vorname" autocomplete="nickname"></label>
     <label>Über dich<textarea id="pBio" maxlength="300" placeholder="Optional – ein, zwei Sätze">${esc(d.bio)}</textarea></label>
+    ${me.profile ? '' : consentHtml()}
     <div class="row-btns"><button type="button" class="btn" data-act="prof-cancel">${me.profile ? 'Abbrechen' : 'Später'}</button><button type="submit" class="btn primary">Speichern</button></div>
   </form>`, 'pedit');
 }
@@ -1339,11 +1376,12 @@ function saveProfile() {
   syncPDraft();
   const d = pdraft; if (!d || !fs || !me.uid) return;
   if (d.name.length < 2) { toast('Der Name braucht mindestens 2 Zeichen'); $('#pName').focus(); return; }
+  if (!me.profile) { try { checkConsent(); } catch (e) { toast(e.message, 5000); return; } }
   const { F } = fs, ref = F.doc(fs.db, 'nutzer', me.uid);
   const data = { name: d.name.slice(0, 40), bio: d.bio.slice(0, 300), photo: d.photo || '', updatedAt: F.serverTimestamp() };
   let pr;
   if (me.profile) pr = F.updateDoc(ref, data);
-  else { data.createdAt = F.serverTimestamp(); pr = F.setDoc(ref, data); }
+  else { data.createdAt = F.serverTimestamp(); data.einwilligung = consentData(); pr = F.setDoc(ref, data); }
   pr.then(() => toast('Profil gespeichert')).catch(e => toast('Profil nicht gespeichert: ' + errHint(e), 6000));
   closeSheet();
 }

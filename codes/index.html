@@ -104,6 +104,8 @@ body.in #login{display:none}body:not(.in) #app{display:none}
         <button type="button" data-f="alle">Alle</button>
       </div>
       <div id="mList"><p class="empty">Lade…</p></div>
+      <h3 style="margin:18px 0 4px;font-size:16px">Gesperrte Konten</h3>
+      <div id="kList"><p class="empty">Lade…</p></div>
     </section>
 
     <section class="card">
@@ -147,7 +149,7 @@ const fmtCode = c => c && c.length === 8 ? c.slice(0, 4) + '-' + c.slice(4) : (c
 const when = ts => { try { const d = ts && ts.toDate ? ts.toDate() : null; return d ? d.toLocaleString('de-DE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''; } catch { return ''; } };
 const STATUS = { neu: 'Neu', freigegeben: 'Freigegeben', sendet: 'Wird gesendet', verschickt: 'Verschickt', fehler: 'Fehler', abgelehnt: 'Abgelehnt', doppelt: 'Doppelt' };
 let fs = null, unsubs = [], anfragen = [], codes = [], names = {}, aFilter = 'offen', cFilter = 'alle';
-let meldungen = [], mFilter = 'offen', mInfo = {};
+let meldungen = [], mFilter = 'offen', mInfo = {}, sperrKonten = [];
 const GRUND = { person: 'Erkennbare Person/Kennzeichen', privat: 'Privatgrundstück/Wohnadresse', illegal: 'Gefährlich oder verboten', beleidigend: 'Beleidigend/unangemessen', falsch: 'Falsch/gibt es nicht mehr', sonstiges: 'Sonstiges' };
 let toastT;
 function toast(m, ms = 2600) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), ms); }
@@ -170,6 +172,7 @@ function stop() { for (const u of unsubs) u(); unsubs = []; }
 function start() {
   const { F, db } = fs;
   unsubs.push(F.onSnapshot(F.doc(db, 'einstellungen', 'codes'), s => { $('#auto').checked = !!(s.exists() && s.data().auto); }, e => toast(errMsg(e), 5000)));
+  unsubs.push(F.onSnapshot(F.collection(db, 'kontosperren'), s => { sperrKonten = s.docs.map(d => ({ id: d.id, ...d.data() })); renderK(); }, e => { $('#kList').innerHTML = `<p class="err">${esc(errMsg(e))}</p>`; }));
   unsubs.push(F.onSnapshot(F.query(F.collection(db, 'meldungen'), F.orderBy('createdAt', 'desc'), F.limit(100)), s => {
     meldungen = s.docs.map(d => ({ id: d.id, ...d.data() })); renderM(); loadMInfo();
   }, e => { $('#mList').innerHTML = `<p class="err">${esc(errMsg(e))}</p>`; }));
@@ -193,7 +196,7 @@ async function loadMInfo() {
   if (!miss.length) return;
   await Promise.all(miss.map(async m => {
     const info = { ort: null, eintrag: null, n: 0 };
-    try { const o = await F.getDoc(F.doc(db, 'orte', m.ort)); if (o.exists()) info.ort = o.data(); } catch {}
+    if (m.ort) { try { const o = await F.getDoc(F.doc(db, 'orte', m.ort)); if (o.exists()) info.ort = o.data(); } catch {} }
     if (m.eintrag) { try { const e = await F.getDoc(F.doc(db, 'oeffentlich', m.eintrag)); if (e.exists()) { info.eintrag = e.data(); try { const p = await F.getDoc(F.doc(db, 'nutzer', info.eintrag.uid)); info.autor = p.exists() ? String(p.data().name || '') : ''; } catch {} } } catch {} }
     mInfo[m.id] = info;
   }));
@@ -202,39 +205,69 @@ async function loadMInfo() {
 function renderM() {
   const open = meldungen.filter(m => m.status === 'offen');
   const n = $('#nMeld'); n.hidden = !open.length; n.textContent = open.length;
-  const list = mFilter === 'offen' ? open : meldungen;
+  const list = mFilter === 'offen' ? open : meldungen.filter(m => m.status !== 'spam');
   $('#mList').innerHTML = list.length ? list.map(m => {
     const i = mInfo[m.id], o = i && i.ort, e = i && i.eintrag;
-    const ortTxt = o ? `${o.name}${o.address ? ' · ' + o.address : ''} (${o.n || 0} Bewertungen)` : (i ? 'Ort nicht mehr öffentlich' : 'Lade…');
-    const eTxt = m.eintrag ? (e ? `Bewertung „${e.name}“ von ${i.autor || 'unbekannt'}: ${e.desc || '(kein Text)'} · ${e.r ? e.r.g : 0}/10` : (i ? 'Bewertung nicht mehr öffentlich' : '')) : 'Der ganze Ort wurde gemeldet';
-    const acts = m.status === 'offen'
-      ? `${m.eintrag && e ? `<button class="btn sm danger" data-a="m-eintrag" data-id="${esc(m.id)}">Bewertung sperren</button>` : ''}${o ? `<button class="btn sm danger" data-a="m-ort" data-id="${esc(m.id)}">Ganzen Ort sperren</button>` : ''}<button class="btn sm" data-a="m-ok" data-id="${esc(m.id)}">Kein Problem</button>`
-      : `<span class="small mut">${esc(m.aktion || 'erledigt')}</span>`;
-    return `<div class="item m"><div class="t"><b>${esc(ortTxt)}</b><small><span class="tag ${m.status === 'offen' ? 'neu' : 'verschickt'}">${esc(GRUND[m.grund] || m.grund)}</span>${esc(when(m.createdAt))}${m.text ? ' · „' + esc(m.text) + '“' : ''}</small><small>${esc(eTxt)}</small></div><div class="acts">${acts}</div></div>`;
+    const extern = m.quelle === 'extern';
+    const ortTxt = extern ? `Ohne Konto: ${m.was || ''}` : o ? `${o.name}${o.address ? ' · ' + o.address : ''} (${o.n || 0} Bewertungen)` : (i ? 'Ort nicht mehr öffentlich' : 'Lade…');
+    const eTxt = extern ? `Von: ${m.name || 'ohne Namen'}${m.email ? ' · ' + m.email : ' · keine E-Mail'} · in gutem Glauben bestätigt`
+      : m.eintrag ? (e ? `Bewertung „${e.name}“ von ${i.autor || 'unbekannt'}: ${e.desc || '(kein Text)'} · ${e.r ? e.r.g : 0}/10` : (i ? 'Bewertung nicht mehr öffentlich' : '')) : 'Der ganze Ort wurde gemeldet';
+    const acts = m.status !== 'offen' ? `<span class="small mut">${esc(m.aktion || 'erledigt')}</span>`
+      : extern ? `<button class="btn sm danger" data-a="m-entfernt" data-id="${esc(m.id)}">Inhalt entfernt</button><button class="btn sm" data-a="m-ok" data-id="${esc(m.id)}">Kein Verstoß</button>`
+      : `${m.eintrag && e ? `<button class="btn sm danger" data-a="m-eintrag" data-id="${esc(m.id)}">Bewertung sperren</button>` : ''}${o ? `<button class="btn sm danger" data-a="m-ort" data-id="${esc(m.id)}">Ganzen Ort sperren</button>` : ''}${e && e.uid ? `<button class="btn sm danger" data-a="m-konto" data-id="${esc(m.id)}">Konto sperren</button>` : ''}<button class="btn sm" data-a="m-ok" data-id="${esc(m.id)}">Kein Verstoß</button>`;
+    return `<div class="item m"><div class="t"><b>${esc(ortTxt)}</b><small><span class="tag ${m.status === 'offen' ? 'neu' : 'verschickt'}">${esc(extern ? 'Meldung von außen' : (GRUND[m.grund] || m.grund))}</span>${esc(when(m.createdAt))}${m.text ? ' · „' + esc(m.text) + '“' : ''}</small><small>${esc(eTxt)}</small></div><div class="acts">${acts}</div></div>`;
   }).join('') : `<p class="empty">${mFilter === 'offen' ? 'Keine offenen Meldungen.' : 'Keine Meldungen.'}</p>`;
 }
-async function sperren(eids, m, aktion) {
+// Begründung abfragen – sie geht per Mail an die betroffene bzw. meldende Person (DSA Art. 16, 17)
+function begruendung(vorschlag) {
+  const t = prompt('Kurze Begründung (geht per Mail an die betroffene Person bzw. die meldende Person):', vorschlag || '');
+  return t === null ? null : String(t).trim().slice(0, 600);
+}
+async function sperren(docs, m, aktion, txt) {
   const { F, db } = fs;
   const b = F.writeBatch(db);
-  for (const eid of eids) { b.set(F.doc(db, 'gesperrt', eid), { ort: m.ort, grund: m.grund, meldung: m.id, at: F.serverTimestamp() }); b.delete(F.doc(db, 'oeffentlich', eid)); }
-  b.update(F.doc(db, 'meldungen', m.id), { status: 'erledigt', aktion, doneAt: F.serverTimestamp() });
+  const ortName = (mInfo[m.id] && mInfo[m.id].ort && mInfo[m.id].ort.name) || '';
+  for (const d of docs) {
+    b.set(F.doc(db, 'gesperrt', d.id), { ort: m.ort || '', ortName, uid: d.uid || '', name: d.name || '', grund: m.grund, begruendung: txt, meldung: m.id, at: F.serverTimestamp() });
+    b.delete(F.doc(db, 'oeffentlich', d.id));
+  }
+  b.update(F.doc(db, 'meldungen', m.id), { status: 'erledigt', aktion, begruendung: txt, doneAt: F.serverTimestamp() });
   await b.commit();
 }
 async function moderate(id, a) {
   const m = meldungen.find(x => x.id === id); if (!m) return;
   const { F, db } = fs;
+  const i = mInfo[m.id] || {};
   try {
-    if (a === 'm-ok') { await F.updateDoc(F.doc(db, 'meldungen', id), { status: 'erledigt', aktion: 'Kein Problem', doneAt: F.serverTimestamp() }); toast('Als erledigt markiert'); }
-    else if (a === 'm-eintrag') {
+    if (a === 'm-ok') {
+      const t = begruendung('Wir konnten keinen Verstoß gegen geltendes Recht oder die Nutzungsbedingungen feststellen.'); if (t === null) return;
+      await F.updateDoc(F.doc(db, 'meldungen', id), { status: 'erledigt', aktion: 'Kein Verstoß', begruendung: t, doneAt: F.serverTimestamp() }); toast('Erledigt – die meldende Person wird informiert');
+    } else if (a === 'm-entfernt') {
+      const t = begruendung('Der gemeldete Inhalt verstieß gegen die Nutzungsbedingungen und wurde entfernt.'); if (t === null) return;
+      await F.updateDoc(F.doc(db, 'meldungen', id), { status: 'erledigt', aktion: 'Inhalt entfernt', begruendung: t, doneAt: F.serverTimestamp() }); toast('Erledigt – bitte den Inhalt selbst sperren, falls noch nicht geschehen');
+    } else if (a === 'm-eintrag') {
       if (!confirm('Diese Bewertung sperren? Sie verschwindet von der öffentlichen Karte und kann nicht erneut geteilt werden.')) return;
-      await sperren([m.eintrag], m, 'Bewertung gesperrt'); toast('Bewertung gesperrt');
+      const t = begruendung(''); if (t === null) return;
+      await sperren([{ id: m.eintrag, uid: i.eintrag && i.eintrag.uid, name: i.eintrag && i.eintrag.name }], m, 'Bewertung gesperrt', t); toast('Bewertung gesperrt – Begründung geht per Mail raus');
     } else if (a === 'm-ort') {
       const s = await F.getDocs(F.query(F.collection(db, 'oeffentlich'), F.where('ort', '==', m.ort)));
       if (!confirm(`Den ganzen Ort sperren? Alle ${s.docs.length} Bewertungen verschwinden von der öffentlichen Karte.`)) return;
-      await sperren(s.docs.map(d => d.id), m, 'Ort gesperrt'); toast('Ort gesperrt');
+      const t = begruendung(''); if (t === null) return;
+      await sperren(s.docs.map(d => ({ id: d.id, uid: d.data().uid, name: d.data().name })), m, 'Ort gesperrt', t); toast('Ort gesperrt');
+    } else if (a === 'm-konto') {
+      const uid = i.eintrag && i.eintrag.uid; if (!uid) return;
+      if (!confirm(`Das Konto von ${i.autor || 'dieser Person'} sperren? Login wird deaktiviert, alle öffentlichen Einträge verschwinden. Nur bei wiederholten oder schweren Verstößen.`)) return;
+      const t = begruendung(''); if (t === null) return;
+      const b = F.writeBatch(db);
+      b.set(F.doc(db, 'kontosperren', uid), { grund: m.grund, begruendung: t, meldung: m.id, name: i.autor || '', at: F.serverTimestamp() });
+      b.update(F.doc(db, 'meldungen', id), { status: 'erledigt', aktion: 'Konto gesperrt', begruendung: t, doneAt: F.serverTimestamp() });
+      await b.commit(); toast('Konto gesperrt – Begründung geht per Mail raus');
     }
     delete mInfo[id]; loadMInfo();
   } catch (er) { toast(errMsg(er), 5000); }
+}
+function renderK() {
+  $('#kList').innerHTML = sperrKonten.length ? sperrKonten.map(k => `<div class="item"><div class="t"><b>${esc(k.name || k.id)}</b><small>${esc(GRUND[k.grund] || k.grund || '')} · ${esc(when(k.at))}${k.begruendung ? ' · „' + esc(k.begruendung) + '“' : ''}</small></div><div class="acts"><button class="btn sm" data-a="k-frei" data-id="${esc(k.id)}">Entsperren</button></div></div>`).join('') : '<p class="empty">Keine gesperrten Konten.</p>';
 }
 function renderA() {
   const open = anfragen.filter(a => a.status === 'neu');
@@ -277,7 +310,8 @@ document.addEventListener('click', async e => {
   if (t && t.closest('#cTabs')) { cFilter = t.dataset.f; for (const b of document.querySelectorAll('#cTabs button')) b.classList.toggle('on', b === t); renderC(); return; }
   const b = e.target.closest('[data-a]'); if (!b) return;
   const id = b.dataset.id, a = b.dataset.a;
-  if (a === 'm-ok' || a === 'm-eintrag' || a === 'm-ort') { b.disabled = true; await moderate(id, a); b.disabled = false; }
+  if (a === 'm-ok' || a === 'm-eintrag' || a === 'm-ort' || a === 'm-konto' || a === 'm-entfernt') { b.disabled = true; await moderate(id, a); b.disabled = false; }
+  else if (a === 'k-frei') { if (!confirm('Konto wieder freigeben? Die Person kann sich dann wieder anmelden.')) return; b.disabled = true; try { await fs.F.deleteDoc(fs.F.doc(fs.db, 'kontosperren', id)); toast('Konto freigegeben'); } catch (er) { toast(errMsg(er), 5000); b.disabled = false; } }
   else if (a === 'ok') { b.disabled = true; await setStatus(id, 'freigegeben'); }
   else if (a === 'no') { b.disabled = true; await setStatus(id, 'abgelehnt'); }
   else if (a === 'again') {
