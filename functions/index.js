@@ -11,6 +11,7 @@
  * Der Brevo-API-Schlüssel liegt als Secret BREVO_KEY in Google Secret Manager.
  */
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
 const { defineSecret } = require('firebase-functions/params');
 const { initializeApp } = require('firebase-admin/app');
@@ -154,5 +155,21 @@ exports.anfrageGeaendert = onDocumentUpdated({ document: 'anfragen/{id}', secret
   await run(event.data.after.ref, after);
 });
 
+/* Aufräumen: Anfragen und Einladungscodes nach 6 Monaten löschen (so steht es in der Datenschutzerklärung) */
+async function aufraeumen(now = Date.now()) {
+  const cutoff = Timestamp.fromMillis(now - 183 * 24 * 3600 * 1000);
+  let n = 0;
+  for (const col of ['anfragen', 'einladungen']) {
+    const old = await db.collection(col).where('createdAt', '<', cutoff).get();
+    for (let i = 0; i < old.docs.length; i += 400) {
+      const b = db.batch(); old.docs.slice(i, i + 400).forEach(d => b.delete(d.ref)); await b.commit();
+    }
+    n += old.docs.length;
+  }
+  logger.info('Aufgeräumt', { geloescht: n });
+  return n;
+}
+exports.aufraeumen = onSchedule({ schedule: 'every day 03:17', timeZone: 'Europe/Berlin' }, () => aufraeumen());
+
 // nur für lokale Tests
-if (process.env.FS_TEST) exports._test = { issue, inviteMail, genCode };
+if (process.env.FS_TEST) exports._test = { issue, inviteMail, genCode, aufraeumen };

@@ -7,15 +7,14 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FS">
-<meta name="app-version" content="2026.11.25-16">
+<meta name="app-version" content="2026.11.25-17">
 <meta name="theme-color" content="#3a1f33">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <title>FS</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="lib/leaflet/leaflet.css">
+<link rel="stylesheet" href="lib/maplibre-gl.css">
+<link rel="stylesheet" href="lib/fonts.css">
 <style>
 /*
 VOICE: ruhig und persönlich, wie ein eigenes Notizbuch voller Lieblingsorte
@@ -204,6 +203,7 @@ body.needs-setup #setup{display:block}
 
 .err{color:#e5484d;font-weight:500;min-height:1.5em;margin-top:10px}
 .form label.chk{display:flex;gap:12px;align-items:flex-start;color:var(--ink);font-size:15px;font-weight:400}
+.chk a{color:var(--acc)}
 .chk input{width:22px;height:22px;flex:none;margin:1px 0 0;padding:0;-webkit-appearance:checkbox;appearance:auto;accent-color:var(--acc)}
 #setupSwitch{margin-top:4px;text-align:center}
 .choice .av.s{border-width:0}
@@ -257,12 +257,13 @@ body.needs-setup #setup{display:block}
     <button class="btn primary wide" type="submit" id="lgBtn">Anmelden</button>
     <p class="err" id="setupErr"></p>
     <p class="small mut" id="setupSwitch"></p>
+    <p class="small mut" style="text-align:center;margin-top:18px"><a href="rechtliches/datenschutz.html" target="_blank" rel="noopener" style="color:inherit">Datenschutz</a> · <a href="rechtliches/nutzungsbedingungen.html" target="_blank" rel="noopener" style="color:inherit">Nutzungsbedingungen</a> · <a href="rechtliches/impressum.html" target="_blank" rel="noopener" style="color:inherit">Impressum</a></p>
   </form>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
+<script src="lib/leaflet/leaflet.js"></script>
+<script src="lib/maplibre-gl.js"></script>
+<script src="lib/leaflet-maplibre-gl.js"></script>
 <script type="module">
 {
 const FB_VER = '10.12.2';
@@ -927,11 +928,8 @@ async function loadSuggestions(force, useMap) {
   const req = ++SUG.req;
   SUG.loading = true; SUG.err = ''; SUG.origin = o.c; SUG.originLabel = o.label; refreshList();
   try {
-    const [VT, P] = await Promise.all([
-      import('https://cdn.jsdelivr.net/npm/@mapbox/vector-tile@2.0.4/+esm'),
-      import('https://cdn.jsdelivr.net/npm/pbf@4.0.1/+esm')
-    ]);
-    const Pbf = P.default;
+    const VTM = await import('./lib/vt.js'); // @mapbox/vector-tile + pbf, selbst ausgeliefert
+    const VT = { VectorTile: VTM.VectorTile }, Pbf = VTM.Pbf;
     if (!SUG.tj) SUG.tj = await (await fetch('https://tiles.openfreemap.org/planet')).json();
     const tpl = SUG.tj.tiles[0], z = 14, n = 2 ** z, [lat, lon] = o.c;
     const cx = Math.floor((lon + 180) / 360 * n);
@@ -1025,6 +1023,8 @@ function showSettings() {
     <p class="mut small" style="margin:0 0 4px">Angemeldet als <b>${esc(userEmail || '–')}</b></p>
     <button class="btn danger wide" data-act="logout">Abmelden</button>
     <button class="linkbtn" data-act="acc-del" style="color:var(--mut);font-weight:500;width:100%">Konto löschen</button>
+    <h3>Rechtliches</h3>
+    <p class="small" style="margin:0 0 4px"><a href="rechtliches/datenschutz.html" target="_blank" rel="noopener" style="color:var(--acc)">Datenschutz</a> · <a href="rechtliches/nutzungsbedingungen.html" target="_blank" rel="noopener" style="color:var(--acc)">Nutzungsbedingungen</a> · <a href="rechtliches/impressum.html" target="_blank" rel="noopener" style="color:var(--acc)">Impressum</a></p>
     <h3>App</h3>
     <p class="mut small" style="margin:0 0 4px">Version ${esc(APP_VERSION)} · Updates werden automatisch geladen.</p>
     <button class="btn wide" data-act="checkupdate">Jetzt nach Updates suchen</button>`, 'settings');
@@ -1137,7 +1137,8 @@ function setupMode(m, msg) {
   const name = `<label>Dein Name in der App<input id="rgName" maxlength="40" autocomplete="nickname" placeholder="Spitzname oder Vorname"></label>`;
   const email = `<label>E-Mail<input id="lgEmail" type="email" autocomplete="username" autocapitalize="off" spellcheck="false" inputmode="email"></label>`;
   const pw = nw => `<label>Passwort<input id="lgPw" type="password" autocomplete="${nw ? 'new-password' : 'current-password'}"${nw ? ' minlength="6" placeholder="mindestens 6 Zeichen"' : ''}></label>`;
-  const age = `<label class="chk"><input type="checkbox" id="rgAge"><span>Ich bin mindestens 18 Jahre alt.</span></label>`;
+  const age = `<label class="chk"><input type="checkbox" id="rgAge"><span>Ich bin mindestens 18 Jahre alt.</span></label>
+    <label class="chk"><input type="checkbox" id="rgOk"><span>Ich akzeptiere die <a href="rechtliches/nutzungsbedingungen.html" target="_blank" rel="noopener">Nutzungsbedingungen</a> und willige ein, dass meine Orte und Bewertungen verarbeitet werden, auch wenn sie Rückschlüsse auf mein Privat- und Intimleben zulassen (<a href="rechtliches/datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a>).</span></label>`;
   const ask = '<br><a class="linkbtn" href="anfrage/" style="text-decoration:none;display:inline-block">Noch keinen Code? Zugang anfragen</a>';
   const sw = (t, m2, l) => `${t} <button type="button" class="linkbtn" data-act="setup-mode" data-m="${m2}">${l}</button>`;
   const V = {
@@ -1166,6 +1167,7 @@ function readInvite(noCode) {
   if (!noCode && code.length !== 8) throw new Error('Bitte den Einladungscode vollständig eingeben (8 Zeichen).');
   if (name.length < 2) throw new Error('Bitte gib einen Namen mit mindestens 2 Zeichen ein.');
   if (!$('#rgAge').checked) throw new Error('Die App ist erst ab 18 Jahren.');
+  if (!$('#rgOk') || !$('#rgOk').checked) throw new Error('Bitte stimme den Nutzungsbedingungen und der Datenverarbeitung zu.');
   return { code, name };
 }
 async function checkInvite(code) {

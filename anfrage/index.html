@@ -8,8 +8,7 @@
 <title>FS – Zugang anfragen</title>
 <link rel="icon" href="../icon-192.png">
 <link rel="apple-touch-icon" href="../icon-180.png">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../lib/fonts.css">
 <style>
 :root{--acc:#f2542d;--ink:#16191d;--mut:#6b7280;--bg:#fff;--field:#f2f3f5;--line:#e6e7ea;--plum:#3a1f33}
 @media (prefers-color-scheme:dark){:root{--ink:#f2f3f5;--mut:#9aa0a8;--bg:#1b1d21;--field:#272a30;--line:#30333a}}
@@ -26,6 +25,7 @@ label{display:block;font-size:14px;font-weight:500;color:var(--mut);margin-botto
 input[type=email]{display:block;width:100%;margin-top:6px;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1.5px solid transparent;border-radius:12px;padding:12px 14px;outline:none;-webkit-appearance:none;appearance:none}
 input[type=email]:focus{border-color:var(--acc)}
 .chk{display:flex;gap:12px;align-items:flex-start;color:var(--ink);font-size:15px;font-weight:400}
+.chk a{color:var(--acc)}
 .chk input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--acc)}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 button{width:100%;min-height:50px;border:0;border-radius:14px;background:var(--acc);color:#fff;font:inherit;font-weight:700;font-size:17px;margin-top:6px;cursor:pointer}
@@ -50,7 +50,7 @@ body.sent form{display:none}body.sent .done{display:block}
       <label>Deine E-Mail<input id="em" type="email" autocomplete="email" autocapitalize="off" spellcheck="false" inputmode="email" maxlength="120" required></label>
       <div class="hp" aria-hidden="true"><label>Website<input id="hp" type="text" tabindex="-1" autocomplete="off"></label></div>
       <label class="chk"><input type="checkbox" id="age"><span>Ich bin mindestens 18 Jahre alt.</span></label>
-      <label class="chk"><input type="checkbox" id="ok"><span>Meine E-Mail darf gespeichert werden, um mir einen Einladungscode zu schicken.</span></label>
+      <label class="chk"><input type="checkbox" id="ok"><span>Meine E-Mail darf gespeichert werden, um mir einen Einladungscode zu schicken (<a href="../rechtliches/datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a>).</span></label>
       <button type="submit" id="btn">Zugang anfragen</button>
       <p class="err" id="err" role="alert"></p>
       <p class="small">Sobald dein Zugang freigegeben ist, bekommst du deinen Code per Mail von einladung@geheimespots.de. Schau zur Sicherheit auch im Spam-Ordner nach.</p>
@@ -60,6 +60,7 @@ body.sent form{display:none}body.sent .done{display:block}
       <p>Deine Anfrage ist angekommen. Sobald dein Zugang freigegeben ist, bekommst du deinen Einladungscode per Mail.</p>
     </div>
   </div>
+  <p style="text-align:center;font-size:13px;margin:18px 0 0"><a href="../rechtliches/datenschutz.html" style="color:#e3d3dc">Datenschutz</a> · <a href="../rechtliches/nutzungsbedingungen.html" style="color:#e3d3dc">Nutzungsbedingungen</a> · <a href="../rechtliches/impressum.html" style="color:#e3d3dc">Impressum</a></p>
 </div>
 <script type="module">
 const FIREBASE_CONFIG = {
