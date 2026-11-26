@@ -39,7 +39,7 @@ async function sendMail(to, subject, html, text) {
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: { 'api-key': BREVO_KEY.value(), 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify({ sender: SENDER, to: [{ email: to }], subject, htmlContent: html, textContent: text })
+    body: JSON.stringify({ sender: SENDER, replyTo: { email: 'kontakt@geheimespots.de', name: 'FS' }, to: [{ email: to }], subject, htmlContent: html, textContent: text })
   });
   if (!res.ok) throw new Error(`Brevo ${res.status}: ${(await res.text()).slice(0, 300)}`);
 }
