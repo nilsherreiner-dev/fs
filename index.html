@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-27">
+<meta name="app-version" content="2026.11.26-28">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -910,9 +910,8 @@ function toggleFav(id) {
 /* ---------- Favoriten: noch nicht besuchte Orte ---------- */
 function wishBtn() {
   const b = $('#wishBtn'); if (!b) return;
-  const n = wishPins().length;
   b.classList.toggle('on', WISH); b.setAttribute('aria-pressed', WISH ? 'true' : 'false');
-  b.innerHTML = ico('heart') + (n && !WISH ? `<span class="bd">${n > 99 ? '99+' : n}</span>` : '');
+  b.innerHTML = ico('heart'); // bewusst ohne Zähler – sähe aus wie eine verpasste Benachrichtigung
 }
 function statusText(snap) {
   const n = sichtPins().length;
