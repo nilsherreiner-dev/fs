@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-25">
+<meta name="app-version" content="2026.11.26-26">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -37,7 +37,7 @@ body[data-mapstyle=nacht] #map{background:#1e2827}
 body[data-mapstyle=schlicht] #map{background:#f5f3f0}body[data-mapstyle=natur] #map{background:#f6f1e4}
 svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-.top{position:absolute;top:calc(env(safe-area-inset-top) + 30px);left:12px;right:12px;display:flex;gap:8px;justify-content:space-between;z-index:500;pointer-events:none}
+.top{position:absolute;top:calc(env(safe-area-inset-top) + 30px);left:12px;right:12px;display:flex;gap:8px;justify-content:space-between;z-index:510;pointer-events:none}
 .top>*{pointer-events:auto}
 .topfade{position:absolute;left:0;right:0;top:0;height:calc(env(safe-area-inset-top) + 18px);background:linear-gradient(var(--fade,#22141d),transparent);opacity:.85;z-index:450;pointer-events:none}
 .chip{background:var(--chip);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-radius:999px;box-shadow:var(--sh);height:44px;padding:0 16px;display:flex;align-items:center;gap:9px;border:0;font-weight:700;white-space:nowrap}
@@ -230,10 +230,24 @@ body.needs-setup #setup{display:block}
 .badge.wish svg{fill:currentColor}
 .besucht{margin:14px 0 4px}
 .form.offen .ratesec{display:none}
+.pubwrap{position:relative;display:flex}
+#pubFilt{position:absolute;top:52px;left:4px;width:36px;height:36px;padding:0;justify-content:center;opacity:0;transform:translateY(-14px) scale(.6);pointer-events:none;transition:opacity .2s,transform .25s cubic-bezier(.2,.9,.3,1.3)}
+#pubFilt svg{width:18px;height:18px}
+body.pubon #pubFilt{opacity:1;transform:none;pointer-events:auto}
+#pubFilt.act{background:var(--koralle,#f2542d);color:#fff}
+.filtmenu{position:absolute;top:96px;right:-52px;min-width:188px;background:var(--panel,#2a1822);color:var(--haut,#f6e9e4);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.45);padding:6px;display:none;z-index:600}
+.filtmenu.on{display:block}
+.filtmenu .mh{font-size:12px;color:var(--mut);padding:6px 10px 4px}
+.filtmenu button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;color:inherit;font:inherit;font-weight:600;padding:8px 10px;border-radius:12px;text-align:left;min-height:44px;cursor:pointer}
+.filtmenu button.on{background:rgba(242,84,45,.18);color:var(--koralle,#f2542d)}
+.filtmenu .hz{width:30px;height:26px;display:grid;place-items:center;flex:none}
+.filtmenu .hz .herz{filter:none}
 .herz{position:relative;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45)) drop-shadow(0 0 10px var(--hz,transparent))}
 .herz svg{display:block;width:100%;height:100%;overflow:visible}
 .herz b{position:absolute;left:0;right:0;top:30%;text-align:center;font-size:11px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px rgba(0,0,0,.35)}
 .herz.hell b{color:#3a0f22;text-shadow:none}
+.herz b.doppel{left:30%;right:0;top:34%}
+.herz b.riss{top:auto;bottom:-15px;font-size:10px;color:var(--haut,#f6e9e4);text-shadow:0 1px 2px rgba(0,0,0,.8)}
 .av.herzav{background:none;box-shadow:none;border:0}
 .ortbild{margin:-6px -4px 14px;border-radius:18px;overflow:hidden;position:relative;aspect-ratio:3/2;background:var(--line)}
 .ortbild img{width:100%;height:100%;object-fit:cover;display:block}
@@ -268,7 +282,7 @@ body.needs-setup #setup{display:block}
 
 <div class="top">
   <div class="lft"><button class="chip" data-act="list" aria-label="Alle Spots anzeigen"><span class="dot" id="dot"></span><span id="stxt">Spots</span></button><button class="chip ic" id="wishBtn" data-act="wish" aria-label="Favoriten – noch nicht besucht – ein- oder ausblenden" aria-pressed="false"></button></div>
-  <div class="rgt"><button class="chip ic" id="pubBtn" data-act="pub" aria-label="Öffentliche Karte ein- oder ausblenden" aria-pressed="false" data-ic="globe"></button><button class="chip ic" data-act="settings" aria-label="Einstellungen" data-ic="gear"></button></div>
+  <div class="rgt"><div class="pubwrap"><button class="chip ic" id="pubBtn" data-act="pub" aria-label="Öffentliche Karte ein- oder ausblenden" aria-pressed="false" data-ic="globe"></button><button class="chip ic" id="pubFilt" data-act="pub-filt" aria-label="Öffentliche Karte filtern" aria-haspopup="true" data-ic="cog"></button><div class="filtmenu" id="filtMenu" role="menu"></div></div><button class="chip ic" data-act="settings" aria-label="Einstellungen" data-ic="gear"></button></div>
 </div>
 <div class="fabs">
   <button class="fab" data-act="fit" aria-label="Alle Spots zeigen" data-ic="fit"></button>
@@ -452,6 +466,7 @@ const IC = {
   globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9M12 3c-2.5 2.6-3.8 5.6-3.8 9s1.3 6.4 3.8 9"/>',
   flag: '<path d="M5 21V4M5 4h12l-2.5 4 2.5 4H5"/>',
   camera: '<path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/>',
+  cog: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
   heart: '<path d="M12 20.3s-8-4.9-8-10.3A4.4 4.4 0 0 1 12 7.4 4.4 4.4 0 0 1 20 10c0 5.4-8 10.3-8 10.3z"/>'
 };
 const STAR = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>';
@@ -1903,15 +1918,56 @@ function herzFarbe(g) {
   return 'rgb(255,158,190)';
 }
 const HERZ_PFAD = 'M12 21.6s-9.6-5.9-9.6-12.3A5.2 5.2 0 0 1 12 6.2a5.2 5.2 0 0 1 9.6 3.1c0 6.4-9.6 12.3-9.6 12.3z';
+// Drei Stufen: unter 5 = Herz mit Riss, 5 bis unter 7 = Herz, ab 7 = Doppelherz; ohne Bewertung = helles Herz
+const PUB_STUFEN = { alle: { label: 'Alle' }, riss: { label: '0 bis 5 Punkte', min: 0.01, max: 5 }, herz: { label: '5 bis 7 Punkte', min: 5, max: 7 }, doppel: { label: '7 bis 10 Punkte', min: 7, max: 10.01 } };
+const stufeVon = g => !g ? 'leer' : g < 5 ? 'riss' : g < 7 ? 'herz' : 'doppel';
+const RISS = 'M12.3 6.9l-1.6 3.1 2.3 2.2-2 3.1 1.4 2.4-.4 3.3';
+function herzSvg(stufe, f) {
+  const rand = 'stroke="#f6e9e4" stroke-width="1.6" stroke-linejoin="round"';
+  if (stufe === 'doppel') return `<svg viewBox="0 2.6 26 21.4" aria-hidden="true"><g transform="translate(-2.3 -1.4) scale(.86)"><path d="${HERZ_PFAD}" fill="${f}" opacity=".78" ${rand}/></g><g transform="translate(4.6 1.4)"><path d="${HERZ_PFAD}" fill="${f}" ${rand}/></g></svg>`;
+  if (stufe === 'riss') return `<svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="${HERZ_PFAD}" fill="${f}" ${rand}/><path d="${RISS}" fill="none" stroke="#f6e9e4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return `<svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="${HERZ_PFAD}" fill="${f}" ${rand}/></svg>`;
+}
 function herzHtml(o, px) {
-  const f = herzFarbe(o.r.g), hell = !o.r.g || o.r.g >= 7.5;
-  return `<span class="herz${hell ? ' hell' : ''}" style="width:${px}px;height:${px}px;--hz:${f.replace('rgb', 'rgba').replace(')', ',.55)')}"><svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="${HERZ_PFAD}" fill="${f}" stroke="#f6e9e4" stroke-width="1.6"/></svg>${o.r.g && px >= 34 ? `<b>${fmtR(o.r.g)}</b>` : ''}</span>`;
+  const f = herzFarbe(o.r.g), st = stufeVon(o.r.g), hell = st === 'leer' || o.r.g >= 7.5;
+  const w = st === 'doppel' ? Math.round(px * 1.3) : px;
+  const zahl = o.r.g && px >= 34 ? `<b class="${st}">${fmtR(o.r.g)}</b>` : '';
+  return `<span class="herz ${st}${hell ? ' hell' : ''}" style="width:${w}px;height:${px}px;--hz:${f.replace('rgb', 'rgba').replace(')', ',.55)')}">${herzSvg(st, f)}${zahl}</span>`;
 }
 function pubIcon(o) {
   const px = Math.round(Math.min(46, 32 + Math.log2(1 + o.n) * 4)); // mehr Bewertungen = etwas größer
-  return L.divIcon({ className: 'pin', html: herzHtml(o, px), iconSize: [px, px], iconAnchor: [px / 2, px * 0.92] });
+  const w = stufeVon(o.r.g) === 'doppel' ? Math.round(px * 1.3) : px;
+  return L.divIcon({ className: 'pin', html: herzHtml(o, px), iconSize: [w, px], iconAnchor: [w / 2, px * 0.92] });
 }
-function pubBtn() { const b = $('#pubBtn'); if (b) { b.classList.toggle('on', PUB.on); b.setAttribute('aria-pressed', PUB.on ? 'true' : 'false'); } }
+let pubFilter = PUB_STUFEN[LS.get('spots.pubFilter', 'alle')] ? LS.get('spots.pubFilter', 'alle') : 'alle';
+const pubPasst = o => pubFilter === 'alle' || stufeVon(o.r.g) === pubFilter;
+function filtMenuHtml() {
+  const muster = { riss: 3, herz: 6, doppel: 8.5 };
+  return `<div class="mh">Öffentliche Spots zeigen</div>` + Object.entries(PUB_STUFEN).map(([k, x]) => `<button role="menuitemradio" aria-checked="${pubFilter === k}" class="${pubFilter === k ? 'on' : ''}" data-act="pub-filt-set" data-k="${k}"><span class="hz">${k === 'alle' ? ico('globe') : herzHtml({ r: { g: muster[k] } }, 22)}</span>${x.label}</button>`).join('');
+}
+function setPubFilter(k) {
+  if (!PUB_STUFEN[k]) return;
+  pubFilter = k; LS.set('spots.pubFilter', k);
+  for (const o of PUB.orte.values()) pubMarker(o);
+  pubBtn();
+  const m = $('#filtMenu'); if (m) { m.innerHTML = filtMenuHtml(); m.classList.remove('on'); }
+  const n = [...PUB.orte.values()].filter(pubPasst).length;
+  toast(k === 'alle' ? 'Alle öffentlichen Spots' : `${PUB_STUFEN[k].label}: ${n} ${n === 1 ? 'Ort' : 'Orte'}`);
+}
+function pubMarker(o) {
+  let m = PUB.markers.get(o.id);
+  if (!pubPasst(o)) { if (m) { m.remove(); PUB.markers.delete(o.id); } return; }
+  const sg = o.r.g + '|' + o.n + '|' + o.name;
+  if (!m) { m = L.marker([o.lat, o.lng], { icon: pubIcon(o), title: o.name, zIndexOffset: -500 }).addTo(map); m.on('click', () => showOrt(m._oid)); m._oid = o.id; PUB.markers.set(o.id, m); }
+  else { m.setLatLng([o.lat, o.lng]); if (m._sig !== sg) m.setIcon(pubIcon(o)); }
+  m._sig = sg;
+}
+function pubBtn() {
+  const b = $('#pubBtn'); if (b) { b.classList.toggle('on', PUB.on); b.setAttribute('aria-pressed', PUB.on ? 'true' : 'false'); }
+  document.body.classList.toggle('pubon', PUB.on);
+  const f = $('#pubFilt'); if (f) { f.classList.toggle('act', pubFilter !== 'alle'); f.setAttribute('aria-label', 'Öffentliche Karte filtern – ' + PUB_STUFEN[pubFilter].label); f.tabIndex = PUB.on ? 0 : -1; }
+  if (!PUB.on) { const m = $('#filtMenu'); if (m) m.classList.remove('on'); }
+}
 function startPub() {
   pubBtn();
   if (!PUB.on || PUB.unsub || !fs || !me.uid || !map) return;
@@ -1921,11 +1977,7 @@ function startPub() {
     const seen = new Set();
     snap.forEach(d => {
       const o = ortAus(d.id, d.data()); if (!o) return;
-      seen.add(o.id); PUB.orte.set(o.id, o);
-      let m = PUB.markers.get(o.id); const sg = o.r.g + '|' + o.n + '|' + o.name;
-      if (!m) { m = L.marker([o.lat, o.lng], { icon: pubIcon(o), title: o.name, zIndexOffset: -500 }).addTo(map); m.on('click', () => showOrt(m._oid)); m._oid = o.id; PUB.markers.set(o.id, m); }
-      else { m.setLatLng([o.lat, o.lng]); if (m._sig !== sg) m.setIcon(pubIcon(o)); }
-      m._sig = sg;
+      seen.add(o.id); PUB.orte.set(o.id, o); pubMarker(o);
     });
     for (const id of [...PUB.orte.keys()]) if (!seen.has(id)) { PUB.orte.delete(id); const m = PUB.markers.get(id); if (m) m.remove(); PUB.markers.delete(id); }
     if (PUB.first && !snap.metadata.fromCache) { PUB.first = false; if (!PUB.orte.size) toast('Noch keine öffentlichen Spots. Teile einen über „Bearbeiten“.', 4000); }
@@ -1942,7 +1994,7 @@ function stopPub() {
 }
 function togglePub() {
   PUB.on = !PUB.on; LS.set('spots.pub', PUB.on);
-  if (PUB.on) { startPub(); toast('Öffentliche Karte: je heller das Herz, desto besser bewertet', 3500); } else { stopPub(); toast('Öffentliche Karte ausgeblendet'); }
+  if (PUB.on) { startPub(); toast('Öffentliche Karte: Herz mit Riss unter 5, Herz 5–7, Doppelherz ab 7 Punkten. Das Zahnrad filtert.', 4500); } else { stopPub(); toast('Öffentliche Karte ausgeblendet'); }
 }
 async function ortHolen(oid) {
   if (PUB.orte.has(oid)) return PUB.orte.get(oid);
@@ -2055,6 +2107,8 @@ async function sendMeldung(form) {
 document.addEventListener('click', e => {
   const sm = $('#sortMenu');
   if (sm && sm.classList.contains('on') && !e.target.closest('#sortMenu') && !e.target.closest('#sortBtn')) sm.classList.remove('on');
+  const fm = $('#filtMenu');
+  if (fm && fm.classList.contains('on') && !e.target.closest('#filtMenu') && !e.target.closest('#pubFilt')) fm.classList.remove('on');
   const st = e.target.closest('[data-star]');
   if (st && draft) { const k = st.dataset.star, v = +st.dataset.v; draft.r[k] = draft.r[k] === v ? 0 : v; renderStars(k); return; }
   const b = e.target.closest('[data-act]'); if (!b) return;
@@ -2092,6 +2146,8 @@ document.addEventListener('click', e => {
   else if (a === 'route-clear') clearRoute();
   else if (a === 'settings') showSettings();
   else if (a === 'pub') togglePub();
+  else if (a === 'pub-filt') { const m = $('#filtMenu'); if (m) { m.innerHTML = filtMenuHtml(); m.classList.toggle('on'); } }
+  else if (a === 'pub-filt-set') setPubFilter(b.dataset.k);
   else if (a === 'ort-open') showOrt(b.dataset.id);
   else if (a === 'nutzer-open') showNutzer(b.dataset.id);
   else if (a === 'melden') showMelden(b.dataset.ort, b.dataset.eid);
