@@ -301,6 +301,10 @@ exports.spotGeaendert = onDocumentWritten('karten/{kid}/pins/{pid}', async event
   let a = event.data.after.exists ? event.data.after.data() : null;
   const b = event.data.before.exists ? event.data.before.data() : null;
   if (a && a.offen === true && a.pub) a = { ...a, pub: null }; // noch nicht besucht → nie öffentlich
+  if (!a && b) { // Spot gelöscht → Galerie mitlöschen
+    const g = await db.collection(`karten/${event.params.kid}/pins/${event.params.pid}/bilder`).get();
+    await Promise.all(g.docs.map(d => d.ref.delete()));
+  }
   if (!(a && a.pub) && !(b && b.pub)) return; // war und ist privat → nichts zu tun
   await spotSync(event.params.kid, event.params.pid, a);
 });

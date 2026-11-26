@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-28">
+<meta name="app-version" content="2026.11.26-29">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -54,7 +54,25 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .pin{background:none;border:0}
 .pin-b{position:relative;width:48px;height:48px;border-radius:50%;background:var(--acc);border:3px solid var(--haut);box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 18px rgba(242,84,45,.35);display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px}
 .pin-b img,.leaflet-container .leaflet-marker-pane .pin-b img{width:42px!important;height:42px!important;max-width:42px!important;max-height:42px!important;border-radius:50%;object-fit:cover;display:block}
-.pin-b::after{content:'';position:absolute;left:50%;top:100%;margin-top:-1px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid var(--haut)}
+.pin-b::after{content:'';position:absolute;left:50%;top:100%;margin-top:-1px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid var(--rand,var(--haut))}
+.pin-b.bew{border:4px solid var(--rand);box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 0 1.5px rgba(246,233,228,.85),0 0 16px var(--glow)}
+.gal{margin:16px 0 6px}
+input[hidden]{display:none!important}
+.galgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.galth{all:unset;box-sizing:border-box;position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--field);cursor:pointer;display:grid;place-items:center}
+.galth img{width:100%;height:100%;object-fit:cover;display:block}
+.galth:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.galadd{border:1.5px dashed var(--line);color:var(--mut);font-size:12px;font-weight:600;text-align:center;gap:4px;align-content:center}
+.galadd svg{width:24px;height:24px}
+.lb{position:fixed;inset:0;z-index:3000;background:rgba(18,9,14,.96);display:flex;align-items:center;justify-content:center}
+.lb img{max-width:100%;max-height:100%;object-fit:contain;touch-action:pan-y pinch-zoom}
+.lb button{position:absolute;border:0;background:rgba(246,233,228,.14);color:#f6e9e4;border-radius:999px;min-width:48px;height:48px;display:grid;place-items:center;font:inherit;font-weight:700;padding:0 16px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.lb button svg{width:22px;height:22px}
+.lb .lbx{top:calc(env(safe-area-inset-top) + 14px);right:14px}
+.lb .lbdel{bottom:calc(env(safe-area-inset-bottom) + 18px);left:50%;transform:translateX(-50%)}
+.lb .lbdel.sure{background:#c2362b}
+.lb .lbp,.lb .lbn{font-size:28px;line-height:1}.lb .lbp{left:10px;top:50%;transform:translateY(-50%)}.lb .lbn{right:10px;top:50%;transform:translateY(-50%)}
+.lb .lbc{position:absolute;top:calc(env(safe-area-inset-top) + 26px);left:18px;background:none;font-size:14px;color:#b89aa8;pointer-events:none}
 .me{width:18px;height:18px;border-radius:50%;background:#2f80ff;border:3px solid #fff;box-shadow:0 0 0 6px rgba(47,128,255,.22)}
 
 #cross{position:absolute;left:50%;top:50%;width:48px;height:58px;margin:-58px 0 0 -24px;z-index:600;pointer-events:none;display:none}
@@ -554,12 +572,43 @@ window.addEventListener('orientationchange', () => setTimeout(fitScreen, 300));
 /* ---------- Map ---------- */
 function initMap() {
   const v = LS.get('spots.view', { c: [51.1, 10.4], z: 6 });
-  map = L.map('map', { zoomControl: false, attributionControl: false, worldCopyJump: true }).setView(v.c, v.z);
+  map = L.map('map', { zoomControl: false, attributionControl: false, worldCopyJump: true, doubleClickZoom: false }).setView(v.c, v.z);
+  doppelTipp(map);
   L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map);
   // Neues Design: einmalig auf „Abend“ umstellen; danach gilt die eigene Wahl
   if (!LS.get('spots.design2', false)) { LS.set('spots.design2', true); LS.set('spots.style', 'abend'); }
   setStyle(LS.get('spots.style', 'abend'));
   map.on('moveend', () => { const c = map.getCenter(); LS.set('spots.view', { c: [c.lat, c.lng], z: map.getZoom() }); });
+}
+// Doppeltipp (Touch) bzw. Doppelklick (Maus) zoomt eine Stufe an die Stelle heran
+function doppelTipp(m) {
+  const el = m.getContainer();
+  let down = null, last = null, touches = 0, lastZoom = 0;
+  const zoomAn = (x, y) => {
+    if (Date.now() - lastZoom < 400) return; lastZoom = Date.now();
+    const r = el.getBoundingClientRect();
+    m.setZoomAround(m.containerPointToLatLng([x - r.left, y - r.top]), Math.min(m.getMaxZoom(), m.getZoom() + 1));
+  };
+  const aufMarker = t => t && t.closest && t.closest('.leaflet-marker-icon, .leaflet-control, .leaflet-popup');
+  el.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') return;
+    touches++;
+    down = touches === 1 && !aufMarker(e.target) ? { x: e.clientX, y: e.clientY, t: Date.now() } : null;
+    if (touches > 1) last = null; // Zwei Finger = Pinch, kein Doppeltipp
+  }, { passive: true });
+  const ende = e => {
+    if (e.pointerType === 'mouse') return;
+    touches = Math.max(0, touches - 1);
+    if (!down || e.type === 'pointercancel') { down = null; return; }
+    const kurz = Date.now() - down.t < 300 && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 12;
+    if (!kurz) { down = null; last = null; return; }
+    if (last && Date.now() - last.t < 320 && Math.hypot(e.clientX - last.x, e.clientY - last.y) < 36) { zoomAn(e.clientX, e.clientY); last = null; }
+    else last = { x: e.clientX, y: e.clientY, t: Date.now() };
+    down = null;
+  };
+  el.addEventListener('pointerup', ende, { passive: true });
+  el.addEventListener('pointercancel', ende, { passive: true });
+  el.addEventListener('dblclick', e => { if (aufMarker(e.target)) return; e.preventDefault(); if (e.pointerType && e.pointerType !== 'mouse') return; if (Date.now() - lastZoom > 600) zoomAn(e.clientX, e.clientY); });
 }
 function treeImage(col) {
   const s = 32, r = (window.devicePixelRatio || 1) > 1 ? 2 : 1, c = document.createElement('canvas');
@@ -640,9 +689,11 @@ const wishPins = () => [...pins.values()].filter(p => p.offen);
 function pinIcon(p) {
   if (p.offen) return L.divIcon({ className: 'pin', html: `<span class="wishpin" style="width:40px;height:40px"><svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="M12 21.6s-9.6-5.9-9.6-12.3A5.2 5.2 0 0 1 12 6.2a5.2 5.2 0 0 1 9.6 3.1c0 6.4-9.6 12.3-9.6 12.3z" fill="#f2542d" stroke="#f6e9e4" stroke-width="1.6"/><path d="M12 11.2l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" fill="#fff8f2"/></svg></span>`, iconSize: [40, 40], iconAnchor: [20, 37] });
   const inner = okPhoto(p.photo) ? `<img src="${p.photo}" alt="">` : esc(initials(p.name));
-  return L.divIcon({ className: 'pin', html: `<div class="pin-b">${inner}</div>`, iconSize: [48, 58], iconAnchor: [24, 58] });
+  const g = p.r && p.r.g, f = g ? herzFarbe(g) : ''; // Randfarbe wie bei den öffentlichen Herzen
+  const st = f ? ` style="--rand:${f};--glow:${f.replace('rgb', 'rgba').replace(')', ',.55)')}"` : '';
+  return L.divIcon({ className: 'pin', html: `<div class="pin-b${f ? ' bew' : ''}"${st}>${inner}</div>`, iconSize: [48, 58], iconAnchor: [24, 58] });
 }
-const sig = p => (p.photo ? p.photo.length + p.photo.slice(-32) : '') + '|' + p.name + '|' + (p.offen ? 1 : 0);
+const sig = p => (p.photo ? p.photo.length + p.photo.slice(-32) : '') + '|' + p.name + '|' + (p.offen ? 1 : 0) + '|' + (p.r ? p.r.g : 0);
 function upsertMarker(p) {
   let m = markers.get(p.id);
   if (!sichtbar(p)) { if (m) { m.remove(); markers.delete(p.id); } return; }
@@ -787,12 +838,96 @@ function showProfile(id, keepView) {
     <button class="btn primary wide besucht" data-act="besucht" data-id="${esc(p.id)}">Wir waren da – jetzt bewerten</button>` : `<div class="score"><b>${clampR(r.g)}</b><div>${stars('g', clampR(r.g))}<small>Gesamt von 10</small></div></div>
     ${CATS.slice(1).map(([k, l]) => `<div class="rate"><span>${l}</span><span class="r">${stars(k, clampR(r[k]))}<span class="n">${clampR(r[k])}/10</span></span></div>`).join('')}`}
     ${p.desc ? `<p class="desc">${esc(p.desc)}</p>` : '<p class="desc mut">Noch keine Beschreibung.</p>'}
+    ${galHtml(p.id)}
     <button class="btn wide" data-act="fav" data-id="${esc(p.id)}" style="margin-top:4px">${ico('pushpin')} ${p.fav ? 'Nicht mehr anheften' : 'Oben in der Liste anheften'}</button>
     ${navHtml(p.lat, p.lng, p.name)}
     <div class="row-btns"><button class="btn danger" data-act="del">Löschen</button><button class="btn primary" data-act="edit">Bearbeiten</button></div>
     ${when ? `<p class="small mut" style="margin-top:12px">Zuletzt geändert am ${esc(when)}</p>` : ''}`, 'profile');
   openId = id;
+  if (!GAL.has(id) || GAL.get(id).alt) galLaden(id);
 }
+
+/* ---------- Galerie: bis zu 5 Bilder pro Spot (eigene Unterliste, damit die Karte leicht bleibt) ---------- */
+const GAL = new Map(), GAL_IDS = ['b1', 'b2', 'b3', 'b4', 'b5'];
+const galCol = pid => fs.F.collection(fs.db, 'karten', curKid, 'pins', pid, 'bilder');
+function galHtml(pid) {
+  const g = GAL.get(pid), items = (g && g.list) || [];
+  return `<div class="gal" id="gal" data-pid="${esc(pid)}"><div class="sec"><h3>Galerie</h3><span class="mut">${items.length}/5</span></div>
+    <div class="galgrid">${items.map((b, i) => `<button class="galth" data-act="gal-open" data-i="${i}" aria-label="Bild ${i + 1} groß ansehen"><img src="${b.bild}" alt="" loading="lazy"></button>`).join('')}
+    ${items.length < 5 ? `<label class="galth galadd">${ico('camera')}<span>${items.length ? 'Bild dazu' : 'Bilder hinzufügen'}</span><input type="file" accept="image/*" multiple id="galIn" hidden></label>` : ''}</div>
+    ${!g ? '<p class="small mut" style="margin:6px 0 0">Lade Galerie…</p>' : ''}</div>`;
+}
+function galNeu(pid) { const el = $('#gal'); if (el && mode === 'profile' && openId === pid) el.outerHTML = galHtml(pid); }
+async function galLaden(pid) {
+  if (!fs || !curKid) return;
+  try {
+    const s = await fs.F.getDocs(galCol(pid));
+    const list = s.docs.map(d => ({ id: d.id, ...d.data() })).filter(b => /^data:image\/jpeg;base64,/.test(b.bild || '')).sort((a, b) => a.id.localeCompare(b.id));
+    GAL.set(pid, { list });
+  } catch (e) { GAL.set(pid, { list: (GAL.get(pid) || {}).list || [], alt: true }); }
+  galNeu(pid);
+}
+async function toGalerie(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Bild konnte nicht gelesen werden')); i.src = url; });
+    const k = Math.min(1, 1280 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); // neu zeichnen = ohne Metadaten (z. B. GPS)
+    let q = 0.82, d = c.toDataURL('image/jpeg', q);
+    while (d.length > 330000 && q > 0.35) { q -= 0.08; d = c.toDataURL('image/jpeg', q); }
+    if (d.length > 330000) { c.width = Math.round(c.width * 0.7); c.height = Math.round(c.height * 0.7); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); d = c.toDataURL('image/jpeg', 0.7); }
+    return d;
+  } finally { URL.revokeObjectURL(url); }
+}
+async function galSenden(inp) {
+  const pid = openId, files = [...(inp.files || [])]; inp.value = '';
+  if (!pid || !files.length || !fs || !curKid) return;
+  if (!GAL.has(pid)) await galLaden(pid);
+  const belegt = new Set(((GAL.get(pid) || {}).list || []).map(b => b.id));
+  const frei = GAL_IDS.filter(x => !belegt.has(x));
+  if (!frei.length) { toast('Die Galerie ist voll – höchstens 5 Bilder'); return; }
+  const nimm = files.slice(0, frei.length);
+  toast(nimm.length > 1 ? `${nimm.length} Bilder werden gespeichert…` : 'Bild wird gespeichert…', 8000);
+  const { F } = fs; let ok = 0;
+  for (let i = 0; i < nimm.length; i++) {
+    try { const bild = await toGalerie(nimm[i]); await F.setDoc(F.doc(galCol(pid), frei[i]), { bild, by: me.uid, createdAt: F.serverTimestamp() }); ok++; }
+    catch (e) { toast('Bild nicht gespeichert: ' + errHint(e), 6000); }
+  }
+  await galLaden(pid);
+  if (ok) toast(files.length > frei.length ? `${ok} gespeichert – mehr als 5 Bilder gehen nicht` : ok === 1 ? 'Bild gespeichert' : `${ok} Bilder gespeichert`, 3500);
+}
+let LB = null;
+function lbZeigen() {
+  const g = LB && GAL.get(LB.pid), list = (g && g.list) || [];
+  if (!list.length) { lbZu(); return; }
+  LB.i = (LB.i + list.length) % list.length;
+  let el = $('#lb');
+  if (!el) { el = document.createElement('div'); el.id = 'lb'; el.className = 'lb'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Galerie'); document.body.appendChild(el);
+    let sx = null; // Wischen nach links/rechts blättert
+    el.addEventListener('pointerdown', e => { sx = e.target.tagName === 'IMG' ? e.clientX : null; });
+    el.addEventListener('pointerup', e => { if (sx === null || !LB) return; const d = e.clientX - sx; sx = null; if (Math.abs(d) > 50) { LB.i += d < 0 ? 1 : -1; LB.sure = false; lbZeigen(); } });
+  }
+  el.innerHTML = `<img src="${list[LB.i].bild}" alt="Bild ${LB.i + 1} von ${list.length}"><span class="lbc">${LB.i + 1} / ${list.length}</span>
+    <button class="lbx" data-act="lb-zu" aria-label="Schließen">${ico('x')}</button>
+    ${list.length > 1 ? `<button class="lbp" data-act="lb-p" aria-label="Vorheriges Bild">‹</button><button class="lbn" data-act="lb-n" aria-label="Nächstes Bild">›</button>` : ''}
+    <button class="lbdel${LB.sure ? ' sure' : ''}" data-act="lb-del">${LB.sure ? 'Wirklich löschen?' : 'Bild löschen'}</button>`;
+  el.querySelector('.lbx').focus();
+}
+function lbZu() { const el = $('#lb'); if (el) el.remove(); LB = null; }
+async function lbLoeschen() {
+  if (!LB) return;
+  if (!LB.sure) { LB.sure = true; lbZeigen(); return; }
+  const g = GAL.get(LB.pid), b = g && g.list[LB.i]; if (!b) return;
+  try { await fs.F.deleteDoc(fs.F.doc(galCol(LB.pid), b.id)); g.list.splice(LB.i, 1); LB.sure = false; toast('Bild gelöscht'); galNeu(LB.pid); lbZeigen(); }
+  catch (e) { toast('Nicht gelöscht: ' + errHint(e), 5000); }
+}
+document.addEventListener('keydown', e => {
+  if (!LB) return;
+  if (e.key === 'Escape') lbZu();
+  else if (e.key === 'ArrowLeft') { LB.i--; LB.sure = false; lbZeigen(); }
+  else if (e.key === 'ArrowRight') { LB.i++; LB.sure = false; lbZeigen(); }
+});
 const LIST_STEP = 10;
 let listLimit = LIST_STEP, listQuery = '';
 function rowHtml(p, k = 'g') {
@@ -1931,13 +2066,13 @@ function herzSvg(stufe, f) {
   return `<svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="${HERZ_PFAD}" fill="${f}" ${rand}/></svg>`;
 }
 // Größe je Symbol: einfaches Herz etwas kleiner, Doppelherz breiter. Keine Zahlen – Symbol und Farbe zeigen die Stufe.
-const herzMass = (st, px) => st === 'doppel' ? [Math.round(px * 1.25), px] : st === 'riss' ? [px, px] : [Math.round(px * 0.8), Math.round(px * 0.8)];
+const herzMass = (st, px) => st === 'doppel' ? [Math.round(px * 1.45), Math.round(px * 1.22)] : [px, px]; // alle Stufen gleich groß; Doppelherz breiter, damit jedes Herz so groß wirkt wie ein einzelnes
 function herzHtml(o, px) {
   const f = herzFarbe(o.r.g), st = stufeVon(o.r.g), [w, h] = herzMass(st, px);
   return `<span class="herz ${st}" style="width:${w}px;height:${h}px;--hz:${f.replace('rgb', 'rgba').replace(')', ',.55)')}">${herzSvg(st, f)}</span>`;
 }
 function pubIcon(o) {
-  const px = Math.round(Math.min(46, 32 + Math.log2(1 + o.n) * 4)); // mehr Bewertungen = etwas größer
+  const px = 36;
   const [w, h] = herzMass(stufeVon(o.r.g), px);
   return L.divIcon({ className: 'pin', html: herzHtml(o, px), iconSize: [w, h], iconAnchor: [w / 2, h * 0.92] });
 }
@@ -2192,6 +2327,11 @@ document.addEventListener('click', e => {
     toast('Wie war’s? Bewerte den Ort und speichere', 3000);
   }
   else if (a === 'wish') toggleWish();
+  else if (a === 'gal-open') { LB = { pid: openId, i: +b.dataset.i, sure: false }; lbZeigen(); }
+  else if (a === 'lb-zu') lbZu();
+  else if (a === 'lb-p') { LB.i--; LB.sure = false; lbZeigen(); }
+  else if (a === 'lb-n') { LB.i++; LB.sure = false; lbZeigen(); }
+  else if (a === 'lb-del') lbLoeschen();
   else if (a === 'merk') merkToggle(b);
   else if (a === 'del') { const p = pins.get(openId); if (p) confirmBox(`„${p.name}“ löschen?`, 'Der Spot verschwindet auf allen verbundenen Handys. Das lässt sich nicht rückgängig machen.', 'Löschen', 'del-yes', p.id); }
   else if (a === 'del-yes') deletePin(b.dataset.id);
@@ -2225,6 +2365,7 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('change', async e => {
   if (e.target.id === 'ortFotoIn') { ortFotoSenden(e.target); return; }
+  if (e.target.id === 'galIn') { galSenden(e.target); return; }
   if (e.target.id === 'fOffen') { const f = $('#pf'); if (f) f.classList.toggle('offen', e.target.checked); if (draft) draft.offen = e.target.checked; return; }
   if (e.target.id === 'pushTog') { if (e.target.checked) pushAn(e.target); else pushAus(); return; }
   if (e.target.id === 'sugTog') {

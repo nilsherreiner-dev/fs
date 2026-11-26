@@ -61,6 +61,20 @@ service cloud.firestore {
       match /pins/{pin} {
         allow read, delete: if member(kid) || (kid == 'main' && legacy());
         allow create, update: if (member(kid) || (kid == 'main' && legacy())) && pubOk() && aktiv();
+
+        // Galerie: höchstens 5 Bilder (feste IDs b1–b5), nur JPEG, nur Mitglieder
+        match /bilder/{bid} {
+          allow read, delete: if member(kid) || (kid == 'main' && legacy());
+          allow create: if (member(kid) || (kid == 'main' && legacy())) && aktiv()
+            && bid in ['b1', 'b2', 'b3', 'b4', 'b5']
+            && exists(/databases/$(database)/documents/karten/$(kid)/pins/$(pin))
+            && request.resource.data.keys().hasOnly(['bild', 'by', 'createdAt'])
+            && request.resource.data.keys().hasAll(['bild', 'by', 'createdAt'])
+            && request.resource.data.by == request.auth.uid
+            && request.resource.data.createdAt == request.time
+            && request.resource.data.bild is string && request.resource.data.bild.size() <= 350000
+            && request.resource.data.bild.matches('data:image/jpeg;base64,[A-Za-z0-9+/=]+');
+        }
       }
 
       // Mitglieder: Dokument-ID = Nutzer-UID
