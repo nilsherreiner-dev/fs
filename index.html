@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-35">
+<meta name="app-version" content="2026.11.26-36">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -690,8 +690,8 @@ const sichtbar = p => WISH ? !!p.offen : !p.offen;
 const sichtPins = () => [...pins.values()].filter(sichtbar);
 const wishPins = () => [...pins.values()].filter(p => p.offen);
 function pinIcon(p) {
-  // Favorit (noch nicht besucht): weißes Herz mit rosé Rand und Stern – Gegenstück zu den farbigen öffentlichen Herzen
-  if (p.offen) return L.divIcon({ className: 'pin', html: `<span class="wishpin" style="width:40px;height:40px"><svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="M12 21.6s-9.6-5.9-9.6-12.3A5.2 5.2 0 0 1 12 6.2a5.2 5.2 0 0 1 9.6 3.1c0 6.4-9.6 12.3-9.6 12.3z" fill="#f6e9e4" stroke="#c4456c" stroke-width="1.8"/><path d="M12 11.2l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" fill="#c4456c"/></svg></span>`, iconSize: [40, 40], iconAnchor: [20, 37] });
+  // Favorit (noch nicht besucht): Schloss-Herz – weißes Herz mit rosé Rand, Stern und Bügel oben (Liebesschloss)
+  if (p.offen) return L.divIcon({ className: 'pin', html: `<span class="wishpin" style="width:38px;height:49px"><svg viewBox="2 -3 20 25.8" aria-hidden="true"><path d="M7.6 5V2.8a4.4 4.4 0 0 1 8.8 0V5" fill="none" stroke="#c4456c" stroke-width="1.8"/><path d="M12 21.6s-9.6-5.9-9.6-12.3A5.2 5.2 0 0 1 12 6.2a5.2 5.2 0 0 1 9.6 3.1c0 6.4-9.6 12.3-9.6 12.3z" fill="#f6e9e4" stroke="#c4456c" stroke-width="1.8"/><path d="M12 11.2l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" fill="#c4456c"/></svg></span>`, iconSize: [38, 49], iconAnchor: [19, 46] });
   const inner = okPhoto(p.photo) ? `<img src="${p.photo}" alt="">` : esc(initials(p.name));
   const g = p.r && p.r.g, f = g ? ringFarbe(g) : ''; // drei klar getrennte Stufen wie bei den öffentlichen Herzen
   const st = f ? ` style="--rand:${f};--glow:${f.replace('rgb', 'rgba').replace(')', ',.55)')}"` : '';
