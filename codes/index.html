@@ -51,6 +51,12 @@ label{display:block;font-size:14px;font-weight:500;color:var(--mut);margin-botto
 .item .t small{display:block;color:var(--mut);font-size:13px}
 .item .acts{display:flex;gap:6px;flex:none}
 .item.m{flex-wrap:wrap}.item.m .t{min-width:100%}.item.m .t b{white-space:normal}.item.m .acts{flex-wrap:wrap}
+.foto{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:12px;display:block;background:var(--field)}
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;width:100%;margin-top:8px}
+.fotos button{all:unset;cursor:pointer;display:block;border-radius:12px;overflow:hidden;position:relative}
+.fotos button:focus-visible{outline:3px solid var(--acc)}
+.fotos small{display:block;font-size:11px;color:var(--mut);padding:3px 2px 0;line-height:1.3}
+.mini{width:64px;height:43px;object-fit:cover;border-radius:8px;flex:none;background:var(--field)}
 .tag{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:1px 8px;margin-right:6px;vertical-align:1px;background:var(--field);color:var(--mut)}
 .tag.neu{background:rgba(242,84,45,.2);color:#ff9a80}.tag.verschickt,.tag.eingeloest{background:rgba(63,174,110,.2);color:#8fdcae}.tag.fehler{background:rgba(255,122,127,.2);color:#ffa3a6}.tag.sendet,.tag.freigegeben{background:rgba(255,180,107,.2);color:#ffc98f}
 .code{font-variant-numeric:tabular-nums;letter-spacing:.06em}
@@ -109,6 +115,16 @@ body.in #login{display:none}body:not(.in) #app{display:none}
     </section>
 
     <section class="card">
+      <h2>Ortsfotos <span class="n" id="nFoto" hidden></span></h2>
+      <p class="small mut" style="margin:0">Vorschläge aus der App. Freigegebene Fotos erscheinen ohne Namen. Für Orte ohne Foto kannst du frei lizenzierte Bilder aus Wikimedia Commons in der Nähe suchen – die Quelle wird dann automatisch genannt.</p>
+      <div class="tabs" id="fTabs">
+        <button type="button" data-f="offen" class="on">Vorschläge</button>
+        <button type="button" data-f="orte">Alle Orte</button>
+      </div>
+      <div id="fList"><p class="empty">Lade…</p></div>
+    </section>
+
+    <section class="card">
       <h2>Anfragen <span class="n" id="nNeu" hidden></span></h2>
       <div class="tabs" id="aTabs">
         <button type="button" data-f="offen" class="on">Offen</button>
@@ -150,6 +166,7 @@ const when = ts => { try { const d = ts && ts.toDate ? ts.toDate() : null; retur
 const STATUS = { neu: 'Neu', freigegeben: 'Freigegeben', sendet: 'Wird gesendet', verschickt: 'Verschickt', fehler: 'Fehler', abgelehnt: 'Abgelehnt', doppelt: 'Doppelt' };
 let fs = null, unsubs = [], anfragen = [], codes = [], names = {}, aFilter = 'offen', cFilter = 'alle';
 let meldungen = [], mFilter = 'offen', mInfo = {}, sperrKonten = [];
+let fotos = [], fFilter = 'offen', orteAlle = null, bildIds = new Set(), wiki = {}, wikiOffen = null;
 const GRUND = { person: 'Erkennbare Person/Kennzeichen', privat: 'Privatgrundstück/Wohnadresse', illegal: 'Gefährlich oder verboten', beleidigend: 'Beleidigend/unangemessen', falsch: 'Falsch/gibt es nicht mehr', sonstiges: 'Sonstiges' };
 let toastT;
 function toast(m, ms = 2600) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), ms); }
@@ -172,6 +189,10 @@ function stop() { for (const u of unsubs) u(); unsubs = []; }
 function start() {
   const { F, db } = fs;
   unsubs.push(F.onSnapshot(F.doc(db, 'einstellungen', 'codes'), s => { $('#auto').checked = !!(s.exists() && s.data().auto); }, e => toast(errMsg(e), 5000)));
+  unsubs.push(F.onSnapshot(F.query(F.collection(db, 'ortFotos'), F.where('status', '==', 'offen')), s => {
+    fotos = s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => ((a.createdAt && a.createdAt.toMillis()) || 0) - ((b.createdAt && b.createdAt.toMillis()) || 0));
+    renderF(); orteLaden();
+  }, e => { $('#fList').innerHTML = `<p class="err">${esc(errMsg(e))}</p>`; }));
   unsubs.push(F.onSnapshot(F.collection(db, 'kontosperren'), s => { sperrKonten = s.docs.map(d => ({ id: d.id, ...d.data() })); renderK(); }, e => { $('#kList').innerHTML = `<p class="err">${esc(errMsg(e))}</p>`; }));
   unsubs.push(F.onSnapshot(F.query(F.collection(db, 'meldungen'), F.orderBy('createdAt', 'desc'), F.limit(100)), s => {
     meldungen = s.docs.map(d => ({ id: d.id, ...d.data() })); renderM(); loadMInfo();
@@ -298,6 +319,101 @@ async function setStatus(id, status) {
   try { await F.updateDoc(F.doc(db, 'anfragen', id), { status }); toast(status === 'freigegeben' ? 'Freigegeben – Code wird verschickt' : 'Abgelehnt'); }
   catch (e) { toast(errMsg(e), 5000); }
 }
+/* ---------- Ortsfotos ---------- */
+async function orteLaden(force) {
+  if (orteAlle && !force) return;
+  const { F, db } = fs;
+  try {
+    const [o, b] = await Promise.all([F.getDocs(F.collection(db, 'orte')), F.getDocs(F.collection(db, 'ortBilder'))]);
+    orteAlle = new Map(o.docs.map(d => [d.id, { id: d.id, ...d.data() }]));
+    bildIds = new Set(b.docs.map(d => d.id));
+  } catch (e) { toast(errMsg(e), 5000); orteAlle = orteAlle || new Map(); }
+  renderF();
+}
+const ortTitel = id => { const o = orteAlle && orteAlle.get(id); return o ? `${o.name}${o.address ? ' · ' + o.address : ''}` : (orteAlle ? 'Ort nicht mehr öffentlich' : 'Lade…'); };
+function renderF() {
+  const n = $('#nFoto'); n.hidden = !fotos.length; n.textContent = fotos.length;
+  if (fFilter === 'offen') {
+    $('#fList').innerHTML = fotos.length ? fotos.map(f => `<div class="item m"><div class="t"><b>${esc(ortTitel(f.ort))}</b><small>${esc(when(f.createdAt))}${bildIds.has(f.ort) ? ' · Ort hat schon ein Foto, Freigabe ersetzt es' : ''}</small>
+      ${/^data:image\/jpeg;base64,/.test(f.bild || '') ? `<img class="foto" style="margin-top:8px" src="${f.bild}" alt="Vorschlag">` : ''}</div>
+      <div class="acts"><button class="btn sm primary" data-a="f-ok" data-id="${esc(f.id)}">Freigeben</button><button class="btn sm danger" data-a="f-no" data-id="${esc(f.id)}">Ablehnen</button></div></div>`).join('')
+      : '<p class="empty">Keine offenen Fotovorschläge.</p>';
+    return;
+  }
+  if (!orteAlle) { $('#fList').innerHTML = '<p class="empty">Lade…</p>'; return; }
+  const list = [...orteAlle.values()].sort((a, b) => (bildIds.has(a.id) - bildIds.has(b.id)) || ((b.n || 0) - (a.n || 0)));
+  $('#fList').innerHTML = list.length ? list.map(o => {
+    const w = wiki[o.id];
+    const wHtml = wikiOffen !== o.id ? '' : !w ? '<p class="small mut" style="width:100%">Suche bei Wikimedia Commons…</p>'
+      : w.err ? `<p class="err" style="width:100%">${esc(w.err)}</p>`
+      : !w.list.length ? '<p class="small mut" style="width:100%">Keine frei lizenzierten Bilder im Umkreis von 1 km gefunden.</p>'
+      : `<div class="fotos">${w.list.map((x, i) => `<button type="button" data-a="w-pick" data-id="${esc(o.id)}" data-i="${i}" title="Dieses Bild übernehmen"><img class="foto" src="${esc(x.thumb)}" alt="" loading="lazy"><small>${esc(x.lizenz)} · ${esc(x.autor)}</small></button>`).join('')}</div>`;
+    return `<div class="item m"><div class="t"><b>${esc(o.name)}</b><small>${esc(o.address || '')} · ${o.n || 0} Bewertungen · ${bildIds.has(o.id) ? 'hat ein Foto' : 'kein Foto'}</small></div>
+      <div class="acts"><button class="btn sm" data-a="w-such" data-id="${esc(o.id)}">${wikiOffen === o.id ? 'Schließen' : 'Wikimedia-Bilder in der Nähe'}</button>${bildIds.has(o.id) ? `<button class="btn sm danger" data-a="b-weg" data-id="${esc(o.id)}">Foto entfernen</button>` : ''}</div>${wHtml}</div>`;
+  }).join('') : '<p class="empty">Noch keine öffentlichen Orte.</p>';
+}
+const ohneHtml = h => { const d = document.createElement('div'); d.innerHTML = String(h || ''); return (d.textContent || '').replace(/\s+/g, ' ').trim(); };
+const FREI = /^(CC0|CC BY(-SA)? [0-9.]+( [a-z]+)?|CC BY(-SA)?|Public domain|PD.*)$/i;
+async function wikiSuchen(oid) {
+  const o = orteAlle.get(oid); if (!o) return;
+  wiki[oid] = null; renderF();
+  try {
+    const u = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=geosearch&ggsnamespace=6&ggslimit=20&ggsradius=1000'
+      + `&ggscoord=${o.lat}%7C${o.lng}&prop=imageinfo&iiprop=url%7Cextmetadata%7Cmime&iiurlwidth=900`;
+    const j = await (await fetch(u)).json();
+    const pages = Object.values((j.query && j.query.pages) || {});
+    const list = pages.map(p => {
+      const ii = (p.imageinfo || [])[0] || {}, m = ii.extmetadata || {};
+      const lizenz = (m.LicenseShortName && m.LicenseShortName.value) || '';
+      return { titel: p.title, thumb: ii.thumburl, url: ii.descriptionurl, mime: ii.mime, lizenz, autor: ohneHtml(m.Artist && m.Artist.value).slice(0, 80) || 'unbekannt', idx: p.index || 0 };
+    }).filter(x => x.thumb && /jpeg|png|webp/.test(x.mime || '') && FREI.test(x.lizenz.trim())).sort((a, b) => a.idx - b.idx).slice(0, 12);
+    wiki[oid] = { list };
+  } catch (e) { wiki[oid] = { err: 'Wikimedia nicht erreichbar: ' + (e.message || e), list: [] }; }
+  if (wikiOffen === oid) renderF();
+}
+async function zuBild(src) {
+  const blob = await (await fetch(src)).blob();
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Bild nicht lesbar')); i.src = url; });
+    const w = img.naturalWidth, h = img.naturalHeight, r = 3 / 2;
+    const sw = w / h > r ? h * r : w, sh = w / h > r ? h : w / r;
+    const W = Math.min(900, Math.round(sw)), H = Math.round(W / r);
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    c.getContext('2d').drawImage(img, (w - sw) / 2, (h - sh) / 2, sw, sh, 0, 0, W, H);
+    let q = 0.8, d = c.toDataURL('image/jpeg', q);
+    while (d.length > 330000 && q > 0.4) { q -= 0.1; d = c.toDataURL('image/jpeg', q); }
+    return d;
+  } finally { URL.revokeObjectURL(url); }
+}
+async function fotoAktion(a, id, b) {
+  const { F, db } = fs;
+  try {
+    if (a === 'f-ok' || a === 'f-no') {
+      const f = fotos.find(x => x.id === id); if (!f) return;
+      const bt = F.writeBatch(db);
+      if (a === 'f-ok') bt.set(F.doc(db, 'ortBilder', f.ort), { bild: f.bild, quelle: 'community', credit: 'Foto aus der Community', at: F.serverTimestamp() });
+      bt.delete(F.doc(db, 'ortFotos', id));
+      await bt.commit();
+      if (a === 'f-ok') bildIds.add(f.ort);
+      toast(a === 'f-ok' ? 'Foto freigegeben' : 'Vorschlag abgelehnt und gelöscht');
+    } else if (a === 'w-such') {
+      wikiOffen = wikiOffen === id ? null : id; renderF();
+      if (wikiOffen && !wiki[id]) await wikiSuchen(id);
+    } else if (a === 'w-pick') {
+      const x = wiki[id] && wiki[id].list[+b.dataset.i]; if (!x) return;
+      if (!confirm(`Dieses Bild für „${(orteAlle.get(id) || {}).name}“ übernehmen?\n\n${x.lizenz} · ${x.autor}\nDie Quelle wird unter dem Foto genannt.`)) return;
+      toast('Bild wird übernommen…');
+      const bild = await zuBild(x.thumb);
+      await F.setDoc(F.doc(db, 'ortBilder', id), { bild, quelle: 'wikimedia', credit: `Foto: ${x.autor} · ${x.lizenz} · Wikimedia Commons`, link: x.url, at: F.serverTimestamp() });
+      bildIds.add(id); wikiOffen = null; renderF(); toast('Foto übernommen');
+    } else if (a === 'b-weg') {
+      if (!confirm('Foto dieses Orts entfernen?')) return;
+      await F.deleteDoc(F.doc(db, 'ortBilder', id)); bildIds.delete(id); renderF(); toast('Foto entfernt');
+    }
+  } catch (e) { toast(errMsg(e), 5000); }
+}
+
 async function sendTo(email) {
   const { F, db } = fs;
   await F.addDoc(F.collection(db, 'anfragen'), { email, createdAt: F.serverTimestamp(), status: 'freigegeben' });
@@ -306,10 +422,12 @@ async function sendTo(email) {
 document.addEventListener('click', async e => {
   const t = e.target.closest('[data-f]');
   if (t && t.closest('#aTabs')) { aFilter = t.dataset.f; for (const b of document.querySelectorAll('#aTabs button')) b.classList.toggle('on', b === t); renderA(); return; }
+  if (t && t.closest('#fTabs')) { fFilter = t.dataset.f; for (const b of document.querySelectorAll('#fTabs button')) b.classList.toggle('on', b === t); if (fFilter === 'orte') orteLaden(true); renderF(); return; }
   if (t && t.closest('#mTabs')) { mFilter = t.dataset.f; for (const b of document.querySelectorAll('#mTabs button')) b.classList.toggle('on', b === t); renderM(); return; }
   if (t && t.closest('#cTabs')) { cFilter = t.dataset.f; for (const b of document.querySelectorAll('#cTabs button')) b.classList.toggle('on', b === t); renderC(); return; }
   const b = e.target.closest('[data-a]'); if (!b) return;
   const id = b.dataset.id, a = b.dataset.a;
+  if (/^(f-ok|f-no|w-such|w-pick|b-weg)$/.test(a)) { b.disabled = true; await fotoAktion(a, id, b); b.disabled = false; return; }
   if (a === 'm-ok' || a === 'm-eintrag' || a === 'm-ort' || a === 'm-konto' || a === 'm-entfernt') { b.disabled = true; await moderate(id, a); b.disabled = false; }
   else if (a === 'k-frei') { if (!confirm('Konto wieder freigeben? Die Person kann sich dann wieder anmelden.')) return; b.disabled = true; try { await fs.F.deleteDoc(fs.F.doc(fs.db, 'kontosperren', id)); toast('Konto freigegeben'); } catch (er) { toast(errMsg(er), 5000); b.disabled = false; } }
   else if (a === 'ok') { b.disabled = true; await setStatus(id, 'freigegeben'); }

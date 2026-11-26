@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-23">
+<meta name="app-version" content="2026.11.26-24">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -215,7 +215,16 @@ body.needs-setup #setup{display:block}
 .chk input[type=radio]{-webkit-appearance:radio}
 .top .rgt{display:flex;gap:8px}
 .chip.on{background:var(--acc);color:#fff}
-.pub-b{width:38px;height:38px;border-radius:50%;background:var(--wein);color:var(--haut);border:3px solid var(--haut);box-shadow:0 3px 10px rgba(0,0,0,.35);display:grid;place-items:center;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
+.herz{position:relative;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45)) drop-shadow(0 0 10px var(--hz,transparent))}
+.herz svg{display:block;width:100%;height:100%;overflow:visible}
+.herz b{position:absolute;left:0;right:0;top:30%;text-align:center;font-size:11px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.herz.hell b{color:#3a0f22;text-shadow:none}
+.av.herzav{background:none;box-shadow:none;border:0}
+.ortbild{margin:-6px -4px 14px;border-radius:18px;overflow:hidden;position:relative;aspect-ratio:3/2;background:var(--line)}
+.ortbild img{width:100%;height:100%;object-fit:cover;display:block}
+.ortbild small{position:absolute;left:0;right:0;bottom:0;padding:16px 12px 7px;font-size:11px;color:#f6e9e4;background:linear-gradient(transparent,rgba(28,16,22,.75))}
+.ortbild small a{color:inherit}
+.fotobtn{display:flex;gap:8px;align-items:center;margin-top:10px}
 .pub-b svg{width:18px;height:18px}
 .av.pubav{background:var(--wein)}.av.pubav svg{width:40px;height:40px}
 .av.xs{width:36px;height:36px;font-size:14px;border-width:2px;box-shadow:none}
@@ -426,7 +435,8 @@ const IC = {
   walk: '<circle cx="13" cy="4.5" r="1.8"/><path d="M9 21l2.5-6.5L14 17v4M11.5 14.5L12 9l3.5 3.5L18 13M12 9l-3 2-1 3"/>',
   route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>',
   globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9M12 3c-2.5 2.6-3.8 5.6-3.8 9s1.3 6.4 3.8 9"/>',
-  flag: '<path d="M5 21V4M5 4h12l-2.5 4 2.5 4H5"/>'
+  flag: '<path d="M5 21V4M5 4h12l-2.5 4 2.5 4H5"/>',
+  camera: '<path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/>'
 };
 const STAR = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>';
 
@@ -1097,6 +1107,9 @@ function showSettings() {
     <button class="choice" data-act="karten"><span class="c">${ico('map')}</span><span style="flex:1">${esc((curKarte && curKarte.name) || 'Keine Karte')}<small>${karten.length === 0 ? 'Karte anlegen oder beitreten' : karten.length === 1 ? '1 Karte · einladen, verwalten' : karten.length + ' Karten · wechseln, einladen, verwalten'}</small></span></button>
     <h3>Kartenstil</h3>
     <div class="seg">${Object.entries(STYLES).map(([k, s]) => `<button class="btn${cur === k ? ' primary' : ''}" data-act="style" data-v="${k}">${s.name}</button>`).join('')}</div>
+    <h3>Benachrichtigungen</h3>
+    <label class="tog" style="display:flex;justify-content:space-between;width:100%;margin:2px 0 6px"><span>Neuer Spot von deinem Partner</span><input type="checkbox" id="pushTog" ${LS.get('spots.push', '') ? 'checked' : ''}><span class="sw"></span></label>
+    <p class="mut small" style="margin:0 0 4px">Neutral formuliert, ohne Namen des Spots. Auf dem iPhone nur, wenn GS vom Home-Bildschirm geöffnet ist.</p>
     <h3>Konto</h3>
     <p class="mut small" style="margin:0 0 4px">Angemeldet als <b>${esc(userEmail || '–')}</b></p>
     <button class="btn danger wide" data-act="logout">Abmelden</button>
@@ -1127,6 +1140,21 @@ function endPlacing(ok) {
 }
 
 /* ---------- Photos ---------- */
+// Ortsfoto: 3:2, max. 900 px breit, JPEG – Metadaten (z. B. GPS) gehen beim Neuzeichnen verloren
+async function toBild(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Bild konnte nicht gelesen werden')); i.src = url; });
+    const w = img.naturalWidth, h = img.naturalHeight, r = 3 / 2;
+    const sw = w / h > r ? h * r : w, sh = w / h > r ? h : w / r;
+    const W = Math.min(900, Math.round(sw)), H = Math.round(W / r);
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    c.getContext('2d').drawImage(img, (w - sw) / 2, (h - sh) / 2, sw, sh, 0, 0, W, H);
+    let q = 0.8, d = c.toDataURL('image/jpeg', q);
+    while (d.length > 330000 && q > 0.4) { q -= 0.1; d = c.toDataURL('image/jpeg', q); }
+    return d;
+  } finally { URL.revokeObjectURL(url); }
+}
 async function toThumb(file) {
   const url = URL.createObjectURL(file);
   try {
@@ -1746,6 +1774,36 @@ function deletePin(id) {
   closeSheet(); toast('Spot gelöscht');
 }
 
+/* ---------- Push-Benachrichtigungen (neuer Spot vom Partner) ---------- */
+const VAPID_PUBLIC = 'BLsC2k4Dlfc2Kr5F52hsLVqXEnTPVTh322qQsxi0gZrmi9tNMO9vL0R0qkvTqZbOHrmqPtTK8f5UlPjyM0ZdXsY';
+const pushOk = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const iosNichtInstalliert = () => /iPhone|iPad|iPod/.test(navigator.userAgent) && !navigator.standalone && !matchMedia('(display-mode: standalone)').matches;
+function b64u(s) { const p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)); }
+async function pushId(endpoint) { const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(endpoint)); return [...new Uint8Array(h)].slice(0, 16).map(x => x.toString(16).padStart(2, '0')).join(''); }
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+async function pushAn(tog) {
+  try {
+    if (!pushOk()) throw new Error(iosNichtInstalliert() ? 'Öffne GS vom Home-Bildschirm, dann klappt es.' : 'Dieses Gerät unterstützt keine Benachrichtigungen.');
+    if (iosNichtInstalliert()) throw new Error('Öffne GS vom Home-Bildschirm, dann klappt es.');
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') throw new Error('Benachrichtigungen sind für GS nicht erlaubt. Du kannst das in den Einstellungen deines Handys ändern.');
+    const reg = await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(VAPID_PUBLIC) });
+    const j = sub.toJSON(), id = await pushId(j.endpoint);
+    const { F } = fs;
+    await F.setDoc(F.doc(fs.db, 'nutzer', me.uid, 'push', id), { endpoint: j.endpoint, keys: { p256dh: j.keys.p256dh, auth: j.keys.auth }, geraet: (/iPhone|iPad/.test(navigator.userAgent) ? 'iPhone' : /Android/.test(navigator.userAgent) ? 'Android' : 'Browser'), createdAt: F.serverTimestamp() });
+    LS.set('spots.push', id);
+    toast('Benachrichtigungen an – du erfährst, wenn dein Partner einen Spot hinzufügt', 3500);
+  } catch (e) { if (tog) tog.checked = false; LS.del('spots.push'); toast(e.message || 'Einschalten fehlgeschlagen', 5000); }
+}
+async function pushAus() {
+  const id = LS.get('spots.push', '');
+  LS.del('spots.push');
+  try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); if (sub) await sub.unsubscribe(); } catch {}
+  try { if (id && fs && me.uid) await fs.F.deleteDoc(fs.F.doc(fs.db, 'nutzer', me.uid, 'push', id)); } catch {}
+  toast('Benachrichtigungen aus');
+}
+
 /* ---------- Öffentliche Karte ---------- */
 // Orte kommen vom Server (orte/), Bewertungen aus oeffentlich/, Profile (Kürzel + Bild) aus profile/.
 const PUB = { on: !!LS.get('spots.pub', false), unsub: null, orte: new Map(), markers: new Map(), prof: new Map(), first: true, fails: 0 };
@@ -1757,7 +1815,25 @@ function ortAus(id, x) {
   const r = x.r || {};
   return { id, lat: x.lat, lng: x.lng, name: String(x.name || 'Ohne Namen').slice(0, 80), address: String(x.address || '').slice(0, 200), n: Math.max(0, Number(x.n) || 0), r: { g: num10(r.g), a: num10(r.a), u: num10(r.u) } };
 }
-function pubIcon(o) { return L.divIcon({ className: 'pin', html: `<div class="pub-b">${o.r.g ? fmtR(o.r.g) : ico('globe')}</div>`, iconSize: [38, 38], iconAnchor: [19, 19] }); }
+// Herzfarbe nach Durchschnitt: schlecht = dunkles Burgunder, gut = Rosa; ohne Bewertung = Haut
+const HERZ_STUFEN = [[0, [74, 15, 36]], [5, [138, 35, 70]], [7.5, [214, 74, 120]], [10, [255, 158, 190]]];
+function herzFarbe(g) {
+  if (!g) return 'rgb(246,233,228)';
+  for (let i = 1; i < HERZ_STUFEN.length; i++) {
+    const [a, ca] = HERZ_STUFEN[i - 1], [b, cb] = HERZ_STUFEN[i];
+    if (g <= b) { const t = (g - a) / (b - a); return `rgb(${ca.map((c, j) => Math.round(c + (cb[j] - c) * t)).join(',')})`; }
+  }
+  return 'rgb(255,158,190)';
+}
+const HERZ_PFAD = 'M12 21.6s-9.6-5.9-9.6-12.3A5.2 5.2 0 0 1 12 6.2a5.2 5.2 0 0 1 9.6 3.1c0 6.4-9.6 12.3-9.6 12.3z';
+function herzHtml(o, px) {
+  const f = herzFarbe(o.r.g), hell = !o.r.g || o.r.g >= 7.5;
+  return `<span class="herz${hell ? ' hell' : ''}" style="width:${px}px;height:${px}px;--hz:${f.replace('rgb', 'rgba').replace(')', ',.55)')}"><svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="${HERZ_PFAD}" fill="${f}" stroke="#f6e9e4" stroke-width="1.6"/></svg>${o.r.g && px >= 34 ? `<b>${fmtR(o.r.g)}</b>` : ''}</span>`;
+}
+function pubIcon(o) {
+  const px = Math.round(Math.min(46, 32 + Math.log2(1 + o.n) * 4)); // mehr Bewertungen = etwas größer
+  return L.divIcon({ className: 'pin', html: herzHtml(o, px), iconSize: [px, px], iconAnchor: [px / 2, px * 0.92] });
+}
 function pubBtn() { const b = $('#pubBtn'); if (b) { b.classList.toggle('on', PUB.on); b.setAttribute('aria-pressed', PUB.on ? 'true' : 'false'); } }
 function startPub() {
   pubBtn();
@@ -1789,7 +1865,7 @@ function stopPub() {
 }
 function togglePub() {
   PUB.on = !PUB.on; LS.set('spots.pub', PUB.on);
-  if (PUB.on) { startPub(); toast('Öffentliche Karte eingeblendet'); } else { stopPub(); toast('Öffentliche Karte ausgeblendet'); }
+  if (PUB.on) { startPub(); toast('Öffentliche Karte: je heller das Herz, desto besser bewertet', 3500); } else { stopPub(); toast('Öffentliche Karte ausgeblendet'); }
 }
 async function ortHolen(oid) {
   if (PUB.orte.has(oid)) return PUB.orte.get(oid);
@@ -1820,13 +1896,17 @@ async function showOrt(oid, keepView) {
   const o = await ortHolen(oid);
   if (!o) { toast('Dieser Ort ist nicht mehr öffentlich'); return; }
   if (!keepView) panAbove([o.lat, o.lng]);
-  open(`<div class="head"><span class="av pubav">${ico('globe')}</span><div><h2>${esc(o.name)}</h2><p class="addr">${esc(o.address || 'Keine Adresse')}</p></div></div>
+  open(`<div id="ortBild"></div><div class="head"><span class="av herzav">${herzHtml(o, 64)}</span><div><h2>${esc(o.name)}</h2><p class="addr">${esc(o.address || 'Keine Adresse')}</p></div></div>
     <div class="score"><b>${o.r.g ? fmtR(o.r.g) : '–'}</b><div>${stars('g', Math.round(o.r.g))}<small>Durchschnitt aus ${o.n} ${o.n === 1 ? 'Bewertung' : 'Bewertungen'}</small></div></div>
     ${CATS.slice(1).map(([k, l]) => `<div class="rate"><span>${l}</span><span class="r">${stars(k, Math.round(o.r[k]))}<span class="n">${o.r[k] ? fmtR(o.r[k]) : '–'}</span></span></div>`).join('')}
     ${navHtml(o.lat, o.lng, o.name)}
     <h3>Bewertungen</h3><div id="revs"><p class="hint">Lade…</p></div>
+    <h3>Foto</h3>
+    <p class="mut small" style="margin:0">Hast du ein schönes Foto von diesem Ort? Schlag es vor – wir prüfen es, bevor es hier erscheint. Nur eigene Fotos, ohne erkennbare Personen oder Kennzeichen.</p>
+    <label class="btn wide fotobtn">${ico('camera')} Foto vorschlagen<input type="file" accept="image/*" id="ortFotoIn" data-ort="${esc(o.id)}" hidden></label>
     <button class="linkbtn rev-m ort-m" data-act="melden" data-ort="${esc(o.id)}" data-eid="" style="margin-top:8px">${ico('flag')} Ort melden</button>`, 'ort');
   openId = oid;
+  ortBildLaden(oid);
   try {
     const { F } = fs;
     const s = await F.getDocs(F.query(F.collection(fs.db, 'oeffentlich'), F.where('ort', '==', oid)));
@@ -1834,6 +1914,30 @@ async function showOrt(oid, keepView) {
     const html = (await Promise.all(list.map(e => revHtml(e)))).join('');
     if (mode === 'ort' && openId === oid) { const el = $('#revs'); if (el) el.innerHTML = html || '<p class="hint">Noch keine Bewertungen.</p>'; }
   } catch (e) { const el = $('#revs'); if (el && mode === 'ort' && openId === oid) el.innerHTML = `<p class="hint">Bewertungen konnten nicht geladen werden: ${esc(errHint(e))}</p>`; }
+}
+async function ortBildLaden(oid) {
+  try {
+    const { F } = fs;
+    const s = await F.getDoc(F.doc(fs.db, 'ortBilder', oid));
+    if (!s.exists() || mode !== 'ort' || openId !== oid) return;
+    const b = s.data(), el = $('#ortBild');
+    if (!el || !/^data:image\/jpeg;base64,/.test(b.bild || '')) return;
+    const credit = b.link && /^https:\/\/commons\.wikimedia\.org\//.test(b.link) ? `<a href="${esc(b.link)}" target="_blank" rel="noopener">${esc(b.credit || 'Wikimedia Commons')}</a>` : esc(b.credit || '');
+    el.className = 'ortbild'; el.innerHTML = `<img src="${b.bild}" alt="Foto von ${esc((PUB.orte.get(oid) || {}).name || 'diesem Ort')}">${credit ? `<small>${credit}</small>` : ''}`;
+  } catch {}
+}
+async function ortFotoSenden(inp) {
+  const f = inp.files && inp.files[0], oid = inp.dataset.ort; inp.value = '';
+  if (!f || !oid || !fs || !me.uid) return;
+  try {
+    toast('Foto wird vorbereitet…');
+    const bild = await toBild(f);
+    const { F } = fs;
+    await F.setDoc(F.doc(fs.db, 'ortFotos', oid + '_' + me.uid), { ort: oid, uid: me.uid, bild, status: 'offen', createdAt: F.serverTimestamp() });
+    toast('Danke! Wir schauen uns das Foto an, bevor es erscheint.', 4000);
+  } catch (e) {
+    toast(e && e.code === 'permission-denied' ? 'Du hast für diesen Ort schon ein Foto vorgeschlagen – es wird gerade geprüft.' : 'Foto konnte nicht gesendet werden: ' + errHint(e), 5000);
+  }
 }
 async function showNutzer(uid) {
   if (!fs || !uid) return;
@@ -1976,6 +2080,8 @@ document.addEventListener('submit', e => {
   else if (e.target.id === 'sugForm') sugSearch($('#sugQ').value);
 });
 document.addEventListener('change', async e => {
+  if (e.target.id === 'ortFotoIn') { ortFotoSenden(e.target); return; }
+  if (e.target.id === 'pushTog') { if (e.target.checked) pushAn(e.target); else pushAus(); return; }
   if (e.target.id === 'sugTog') {
     SUG.show = e.target.checked; LS.set('spots.sugShow', SUG.show);
     if (SUG.show && !SUG.items.length) loadSuggestions(true); else drawSugMarkers();

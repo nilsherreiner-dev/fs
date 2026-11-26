@@ -17,6 +17,7 @@ const { defineSecret } = require('firebase-functions/params');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
+const webpush = require('web-push');
 const crypto = require('crypto');
 
 initializeApp();
@@ -203,6 +204,10 @@ async function aufraeumen(now = Date.now()) {
     .concat((await db.collection('meldungen').where('status', '==', 'spam').get()).docs.filter(d => { const c = d.data().createdAt; return c && c.toMillis() < tag; }));
   for (let i = 0; i < alt.length; i += 400) { const b = db.batch(); alt.slice(i, i + 400).forEach(d => b.delete(d.ref)); await b.commit(); }
   n += alt.length;
+  // Nicht bearbeitete Fotovorschläge nach 90 Tagen
+  const fv = await db.collection('ortFotos').where('createdAt', '<', Timestamp.fromMillis(now - 90 * 24 * 3600 * 1000)).get();
+  await Promise.all(fv.docs.map(d => d.ref.delete()));
+  n += fv.docs.length;
   logger.info('Aufgeräumt', { geloescht: n });
   return n;
 }
@@ -274,7 +279,13 @@ async function spotSync(kid, pid, p) {
 async function ortRechnen(oid) {
   const ref = db.doc('orte/' + oid);
   const q = await db.collection('oeffentlich').where('ort', '==', oid).get();
-  if (q.empty) { await ref.delete(); return 0; }
+  if (q.empty) { // leerer Ort verschwindet samt Foto und offenen Fotovorschlägen
+    await ref.delete();
+    await db.doc('ortBilder/' + oid).delete();
+    const f = await db.collection('ortFotos').where('ort', '==', oid).get();
+    await Promise.all(f.docs.map(d => d.ref.delete()));
+    return 0;
+  }
   const sum = { g: 0, a: 0, u: 0 }, cnt = { g: 0, a: 0, u: 0 };
   q.forEach(d => { const r = d.data().r || {}; for (const k of ['g', 'a', 'u']) if (r[k] > 0) { sum[k] += r[k]; cnt[k]++; } });
   const r = {}; for (const k of ['g', 'a', 'u']) r[k] = cnt[k] ? Math.round(sum[k] / cnt[k] * 10) / 10 : 0;
@@ -302,9 +313,13 @@ exports.eintragGeaendert = onDocumentWritten('oeffentlich/{eid}', async event =>
 
 exports.nutzerGeaendert = onDocumentWritten('nutzer/{uid}', async event => {
   const uid = event.params.uid;
-  if (!event.data.after.exists) { // Konto gelöscht → öffentliche Einträge und Profil weg
+  if (!event.data.after.exists) { // Konto gelöscht → öffentliche Einträge, Push-Abos und Profil weg
     const q = await db.collection('oeffentlich').where('uid', '==', uid).get();
     await Promise.all(q.docs.map(d => d.ref.delete()));
+    const ps = await db.collection(`nutzer/${uid}/push`).get();
+    await Promise.all(ps.docs.map(d => d.ref.delete()));
+    const fv = await db.collection('ortFotos').where('uid', '==', uid).get();
+    await Promise.all(fv.docs.map(d => d.ref.delete()));
     await db.doc('profile/' + uid).delete();
     return;
   }
@@ -404,6 +419,36 @@ exports.kontoGesperrt = onDocumentCreated({ document: 'kontosperren/{uid}', secr
     'Du kannst widersprechen: Antworte einfach auf diese Mail oder schreib an kontakt@geheimespots.de. Wir prüfen den Fall dann erneut. Außerdem stehen dir außergerichtliche Streitbeilegung und der Rechtsweg offen. Möchtest du stattdessen, dass wir dein Konto und alle Daten löschen, schreib uns das ebenfalls.'
   ]);
 });
+/* ======================================================================
+ * Push: neuer Spot auf einer gemeinsamen Karte → Benachrichtigung an die anderen Mitglieder
+ *  Text bewusst neutral (kein Spot-Name auf dem Sperrbildschirm).
+ * ====================================================================== */
+const VAPID_PUBLIC = 'BLsC2k4Dlfc2Kr5F52hsLVqXEnTPVTh322qQsxi0gZrmi9tNMO9vL0R0qkvTqZbOHrmqPtTK8f5UlPjyM0ZdXsY';
+const VAPID_PRIVATE = defineSecret('VAPID_PRIVATE');
+async function pushAn(uid, payload) {
+  const subs = await db.collection(`nutzer/${uid}/push`).get();
+  let n = 0;
+  for (const s of subs.docs) {
+    const d = s.data() || {};
+    try { await webpush.sendNotification({ endpoint: d.endpoint, keys: d.keys }, payload, { TTL: 86400, urgency: 'normal' }); n++; }
+    catch (e) { if (e && (e.statusCode === 404 || e.statusCode === 410)) await s.ref.delete(); else logger.warn('Push fehlgeschlagen', { code: e && e.statusCode }); }
+  }
+  return n;
+}
+exports.neuerSpot = onDocumentCreated({ document: 'karten/{kid}/pins/{pid}', secrets: [VAPID_PRIVATE] }, async event => {
+  const p = (event.data && event.data.data()) || {};
+  const kid = event.params.kid;
+  const [k, mem] = await Promise.all([db.doc('karten/' + kid).get(), db.collection(`karten/${kid}/mitglieder`).get()]);
+  const andere = mem.docs.map(d => d.id).filter(u => u !== p.by);
+  if (!andere.length) return 0;
+  webpush.setVapidDetails('mailto:kontakt@geheimespots.de', VAPID_PUBLIC, VAPID_PRIVATE.value());
+  const name = k.exists ? String(k.data().name || '').slice(0, 40) : '';
+  const payload = JSON.stringify({ title: 'GS', body: name ? `Neuer Spot auf „${name}“` : 'Neuer Spot auf eurer Karte', url: './', tag: 'spot-' + kid });
+  let n = 0;
+  for (const u of andere) n += await pushAn(u, payload);
+  return n;
+});
+
 exports.kontoEntsperrt = onDocumentDeleted('kontosperren/{uid}', async event => {
   try { await getAuth().updateUser(event.params.uid, { disabled: false }); } catch (e) { logger.warn('Konto entsperren fehlgeschlagen', String(e)); }
 });

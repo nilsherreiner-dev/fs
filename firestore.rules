@@ -136,6 +136,26 @@ service cloud.firestore {
     match /profile/{uid} {
       allow read: if signedIn();
     }
+    // Freigegebene Ortsfotos (nur Admin schreibt)
+    match /ortBilder/{oid} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    // Fotovorschläge: eine offene Einreichung pro Person und Ort, Prüfung durch Admin
+    match /ortFotos/{fid} {
+      allow read, delete: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if aktiv()
+        && request.resource.data.keys().hasOnly(['ort', 'uid', 'bild', 'status', 'createdAt'])
+        && request.resource.data.keys().hasAll(['ort', 'uid', 'bild', 'status', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.ort is string && request.resource.data.ort.size() <= 40
+        && fid == request.resource.data.ort + '_' + request.auth.uid
+        && exists(/databases/$(database)/documents/orte/$(request.resource.data.ort))
+        && request.resource.data.status == 'offen'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.bild is string && request.resource.data.bild.size() <= 350000
+        && request.resource.data.bild.matches('data:image/jpeg;base64,[A-Za-z0-9+/=]+');
+    }
     match /gesperrt/{eid} {
       allow read, write: if isAdmin();
     }
@@ -188,6 +208,20 @@ service cloud.firestore {
             || (validConsent(request.resource.data.einwilligung)
                 && (!('einwilligung' in resource.data) || resource.data.einwilligung.version != request.resource.data.einwilligung.version)));
       allow delete: if signedIn() && request.auth.uid == uid;
+
+      // Push-Abos (Web Push) – nur für einen selbst
+      match /push/{pid} {
+        allow read, delete: if signedIn() && uid == request.auth.uid;
+        allow create, update: if aktiv() && uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['endpoint', 'keys', 'geraet', 'createdAt'])
+          && request.resource.data.endpoint is string && request.resource.data.endpoint.size() <= 1000
+          && request.resource.data.endpoint.matches('https://.+')
+          && request.resource.data.keys is map && request.resource.data.keys.keys().hasOnly(['p256dh', 'auth'])
+          && request.resource.data.keys.p256dh is string && request.resource.data.keys.p256dh.size() <= 200
+          && request.resource.data.keys.auth is string && request.resource.data.keys.auth.size() <= 100
+          && request.resource.data.geraet is string && request.resource.data.geraet.size() <= 20
+          && request.resource.data.createdAt == request.time;
+      }
 
       // Liste der eigenen Karten (nur für einen selbst)
       match /meineKarten/{kid} {
