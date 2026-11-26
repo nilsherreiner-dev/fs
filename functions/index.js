@@ -62,20 +62,23 @@ Ausführliche Anleitung: ${APP_URL}start/
 Der Code gilt für ein Konto. Wenn du diese Mail nicht erwartet hast, kannst du sie einfach ignorieren.
 
 GS`;
-  const html = `<!doctype html><html lang="de"><body style="margin:0;background:#f4f1ec;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#16191d">
+  const html = `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head><body style="margin:0;background:#1c1016;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#f6e9e4">
 <div style="max-width:480px;margin:0 auto;padding:32px 20px">
-  <div style="background:#3a1f33;border-radius:20px 20px 0 0;padding:22px 24px;color:#f6efe2;font-size:22px;font-weight:700">GS</div>
-  <div style="background:#ffffff;border-radius:0 0 20px 20px;padding:24px">
-    <p style="margin:0 0 14px;font-size:16px;line-height:1.5">Hallo,<br>dein Zugang zu GS ist freigegeben. Hier ist dein persönlicher Einladungscode:</p>
-    <div style="font-size:30px;font-weight:700;letter-spacing:4px;text-align:center;background:#f4f1ec;border-radius:14px;padding:16px 8px;margin:0 0 18px">${esc(c)}</div>
-    <ol style="margin:0 0 18px;padding-left:20px;font-size:15px;line-height:1.6">
+  <div style="background:#2b1424;border-radius:22px 22px 0 0;padding:22px 24px 18px">
+    <div style="font-size:16px;font-weight:700;letter-spacing:.5px;color:#f6e9e4;margin:0 0 10px">GS</div>
+    <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:30px;line-height:1.1;color:#f6e9e4">Dein Zugang ist da.</div>
+  </div>
+  <div style="background:#241520;border-radius:0 0 22px 22px;padding:24px">
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#e3cfd6">Hallo,<br>hier ist dein persönlicher Einladungscode für GS – eure geheime Karte für Orte, die nur ihr zwei kennt:</p>
+    <div style="font-size:30px;font-weight:700;letter-spacing:4px;text-align:center;background:#311d2b;color:#f6e9e4;border-radius:16px;padding:16px 8px;margin:0 0 18px">${esc(c)}</div>
+    <ol style="margin:0 0 20px;padding-left:20px;font-size:15px;line-height:1.65;color:#e3cfd6">
       <li>Öffne den Link unten in Safari.</li>
       <li>Tippe auf Teilen und wähle „Zum Home-Bildschirm“.</li>
       <li>Öffne GS, tippe auf „Mit Einladungscode registrieren“ und gib den Code ein.</li>
     </ol>
-    <p style="text-align:center;margin:0 0 18px"><a href="${APP_URL}" style="display:inline-block;background:#f2542d;color:#ffffff;text-decoration:none;font-weight:700;padding:13px 26px;border-radius:12px">GS öffnen</a></p>
-    <p style="text-align:center;margin:0 0 18px;font-size:14px"><a href="${APP_URL}start/" style="color:#f2542d;font-weight:700">Anleitung Schritt für Schritt</a></p>
-    <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Der Code gilt für ein Konto. Wenn du diese Mail nicht erwartet hast, kannst du sie einfach ignorieren.</p>
+    <p style="text-align:center;margin:0 0 16px"><a href="${APP_URL}" style="display:inline-block;background:#f2542d;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 30px;border-radius:999px">GS öffnen</a></p>
+    <p style="text-align:center;margin:0 0 20px;font-size:14px"><a href="${APP_URL}start/" style="color:#ffb46b;font-weight:700">Anleitung Schritt für Schritt</a></p>
+    <p style="margin:0;font-size:13px;color:#b89aa8;line-height:1.5">Der Code gilt für ein Konto. Wenn du diese Mail nicht erwartet hast, kannst du sie einfach ignorieren.</p>
   </div>
 </div></body></html>`;
   return { subject: `Dein Zugang zu GS: ${c}`, html, text };

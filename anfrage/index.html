@@ -4,46 +4,57 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#3a1f33">
+<meta name="theme-color" content="#1c1016">
 <title>GS – Zugang anfragen</title>
 <link rel="icon" href="../icon-192.png">
 <link rel="apple-touch-icon" href="../icon-180.png">
 <link rel="stylesheet" href="../lib/fonts.css">
 <style>
-:root{--acc:#f2542d;--ink:#16191d;--mut:#6b7280;--bg:#fff;--field:#f2f3f5;--line:#e6e7ea;--plum:#3a1f33}
-@media (prefers-color-scheme:dark){:root{--ink:#f2f3f5;--mut:#9aa0a8;--bg:#1b1d21;--field:#272a30;--line:#30333a}}
+:root{--nacht:#1c1016;--wein:#6b2440;--koralle:#f2542d;--kerze:#ffb46b;--haut:#f6e9e4;--rauch:#b89aa8;--feld:rgba(246,233,228,.07);--linie:rgba(246,233,228,.14);color-scheme:dark}
 *{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:var(--plum)}
-body{font:16px/1.5 'DM Sans',system-ui,-apple-system,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;padding:calc(env(safe-area-inset-top) + 28px) 18px calc(env(safe-area-inset-bottom) + 28px)}
+html{background:var(--nacht)}
+html,body{margin:0;min-height:100%}
+body{font:17px/1.6 'DM Sans',system-ui,-apple-system,sans-serif;color:var(--haut);-webkit-font-smoothing:antialiased;padding:calc(env(safe-area-inset-top) + 22px) 20px calc(env(safe-area-inset-bottom) + 32px);background:radial-gradient(120% 60% at 85% 0%,#4a1f36 0%,#2b1424 45%,var(--nacht) 85%) no-repeat;min-height:100vh}
 .wrap{max-width:460px;margin:0 auto}
-.hero{color:#f6efe2;margin:0 4px 22px}
-.hero svg{width:64px;height:76px;display:block;margin-bottom:14px}
-.hero h1{font-size:40px;line-height:1.05;margin:0 0 8px}
-.hero p{margin:0;color:#e3d3dc;font-size:17px}
-.card{background:var(--bg);border-radius:22px;padding:22px 20px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
-label{display:block;font-size:14px;font-weight:500;color:var(--mut);margin-bottom:14px}
-input[type=email]{display:block;width:100%;margin-top:6px;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1.5px solid transparent;border-radius:12px;padding:12px 14px;outline:none;-webkit-appearance:none;appearance:none}
-input[type=email]:focus{border-color:var(--acc)}
-.chk{display:flex;gap:12px;align-items:flex-start;color:var(--ink);font-size:15px;font-weight:400}
-.chk a{color:var(--acc)}
-.chk input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--acc)}
+.marke{display:inline-block;font-weight:700;letter-spacing:.02em;font-size:18px;color:var(--haut);text-decoration:none;margin-bottom:26px}
+.hero{margin:0 0 26px}
+.hero svg{width:120px;height:92px;display:block;margin-bottom:16px;overflow:visible}
+.hero h1{font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;font-size:clamp(40px,11vw,54px);line-height:1.02;letter-spacing:-.02em;margin:0 0 12px}
+.hero p{margin:0;color:#e3cfd6}
+.card{background:rgba(36,21,32,.75);border-radius:24px;padding:24px 20px;box-shadow:inset 0 0 0 1px var(--linie),0 20px 60px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+label{display:block;font-size:15px;font-weight:500;color:var(--rauch);margin-bottom:16px}
+input[type=email]{display:block;width:100%;margin-top:6px;font:inherit;font-size:16px;color:var(--haut);background:var(--feld);border:1.5px solid var(--linie);border-radius:14px;padding:13px 14px;outline:none;-webkit-appearance:none;appearance:none}
+input[type=email]:focus{border-color:var(--koralle)}
+.chk{display:flex;gap:12px;align-items:flex-start;color:var(--haut);font-size:15px;font-weight:400}
+.chk a{color:var(--kerze)}
+.chk input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--koralle)}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
-button{width:100%;min-height:50px;border:0;border-radius:14px;background:var(--acc);color:#fff;font:inherit;font-weight:700;font-size:17px;margin-top:6px;cursor:pointer}
+button{width:100%;min-height:52px;border:0;border-radius:999px;background:var(--koralle);color:#fff;font:inherit;font-weight:700;font-size:17px;margin-top:8px;cursor:pointer;box-shadow:0 8px 30px rgba(242,84,45,.35)}
 button:disabled{opacity:.6}
-button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
-.err{color:#e5484d;font-weight:500;min-height:1.5em;margin:10px 0 0}
-.small{font-size:13px;color:var(--mut);margin:14px 0 0}
-.done{display:none;text-align:center;padding:10px 0}
-.done b{display:block;font-size:22px;margin-bottom:6px}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--kerze);outline-offset:2px}
+.err{color:#ff7a7f;font-weight:500;min-height:1.5em;margin:10px 0 0}
+.small{font-size:14px;color:var(--rauch);margin:14px 0 0}
+.done{display:none;padding:6px 0}
+.done b{display:block;font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;font-size:32px;margin-bottom:6px}
+.done p{color:#e3cfd6;margin:0}
 body.sent form{display:none}body.sent .done{display:block}
+.unten{text-align:center;margin:22px 0 0;font-size:15px}
+.unten a{color:var(--haut);font-weight:700}
+.recht{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 18px;margin:12px 0 0;font-size:14px}
+.recht a{color:var(--rauch);text-decoration:none}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <a class="marke" href="../start/">GS</a>
   <div class="hero">
-    <svg viewBox="0 0 48 58" aria-hidden="true"><path d="M24 57 16 44h16z" fill="#f6efe2"/><circle cx="24" cy="24" r="21" fill="#f6efe2"/><path d="M24 33.5s-9-5.4-9-11.2a4.9 4.9 0 0 1 9-2.7 4.9 4.9 0 0 1 9 2.7c0 5.8-9 11.2-9 11.2z" fill="#f2542d"/></svg>
-    <h1>GS</h1>
-    <p>Eure Karte für geheime Orte zu zweit. Gerade in einer geschlossenen Testphase.</p>
+    <svg viewBox="0 0 120 92" aria-hidden="true">
+      <circle cx="60" cy="40" r="34" fill="#ff6a4d" opacity=".45" style="filter:blur(14px)"/>
+      <g transform="translate(40 88) rotate(12) translate(-29 -69) scale(1.2)"><path d="M24 57 16 44h16z" fill="#f6e9e4"/><circle cx="24" cy="24" r="21" fill="#f2542d" stroke="#f6e9e4" stroke-width="3"/></g>
+      <g transform="translate(76 88) rotate(-8) translate(-34 -81) scale(1.42)"><path d="M24 57 16 44h16z" fill="#f6e9e4"/><circle cx="24" cy="24" r="21" fill="#f6e9e4"/><path fill="#f2542d" d="M24 33.5s-9.5-5.8-9.5-12.6a5.4 5.4 0 0 1 9.5-3.5 5.4 5.4 0 0 1 9.5 3.5c0 6.8-9.5 12.6-9.5 12.6z"/></g>
+    </svg>
+    <h1>Zugang anfragen</h1>
+    <p>GS ist eure geheime Karte für Orte, die nur ihr zwei kennt. Gerade gibt es Zugang nur mit Einladungscode.</p>
   </div>
   <div class="card">
     <form id="f" novalidate>
@@ -60,8 +71,8 @@ body.sent form{display:none}body.sent .done{display:block}
       <p>Deine Anfrage ist angekommen. Sobald dein Zugang freigegeben ist, bekommst du deinen Einladungscode per Mail.</p>
     </div>
   </div>
-  <p style="text-align:center;font-size:15px;margin:18px 0 0"><a href="../start/" style="color:#fff;font-weight:700">So funktioniert GS</a></p>
-  <p style="text-align:center;font-size:13px;margin:10px 0 0"><a href="../rechtliches/datenschutz.html" style="color:#e3d3dc">Datenschutz</a> · <a href="../rechtliches/nutzungsbedingungen.html" style="color:#e3d3dc">Nutzungsbedingungen</a> · <a href="../rechtliches/impressum.html" style="color:#e3d3dc">Impressum</a></p>
+  <p class="unten"><a href="../start/">So funktioniert GS</a></p>
+  <p class="recht"><a href="../rechtliches/datenschutz.html">Datenschutz</a><a href="../rechtliches/nutzungsbedingungen.html">Nutzungsbedingungen</a><a href="../rechtliches/impressum.html">Impressum</a></p>
 </div>
 <script type="module">
 const FIREBASE_CONFIG = {

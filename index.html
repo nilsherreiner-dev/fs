@@ -7,8 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-20">
-<meta name="theme-color" content="#3a1f33">
+<meta name="app-version" content="2026.11.26-21">
+<meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -21,24 +21,25 @@
 VOICE: ruhig und persönlich, wie ein eigenes Notizbuch voller Lieblingsorte
 IDEA: eine Landkarte ganz ohne Beschriftung, auf die man Fotos pinnt
 PICTURE: die randlose Karte selbst, Fotopins als runde Stecknadeln mit weißem Rand
-COLOUR/TYPE: Kartengrund, Koralle als einziger Akzent, Sterne in Gold; DM Sans
+COLOUR/TYPE: Nacht in Pflaume und Wein, Koralle als Akzent, Kerzenlicht für Sterne; Fraunces kursiv für Überschriften, DM Sans für alles andere (wie Startseite)
 LAYOUT: Vollbildkarte, schwebende Knöpfe unten rechts, alles andere in Bottom-Sheets
 */
-:root{--sug:#3f7f5a;--bg:#fff;--ink:#16191d;--mut:#6b7280;--line:#e6e7ea;--chip:rgba(255,255,255,.93);--acc:#f2542d;--gold:#f5b301;--field:#f2f3f5;--sh:0 6px 24px rgba(0,0,0,.18)}
-@media (prefers-color-scheme:dark){:root{--bg:#1b1d21;--ink:#f2f3f5;--mut:#9aa0a8;--line:#30333a;--chip:rgba(32,34,38,.92);--field:#272a30}}
+:root{--nacht:#1c1016;--wein:#6b2440;--haut:#f6e9e4;--sug:#7b8f6a;--bg:#241520;--ink:#f6e9e4;--mut:#b89aa8;--line:#3d2836;--chip:rgba(36,21,32,.86);--acc:#f2542d;--gold:#ffb46b;--field:#311d2b;--sh:0 6px 24px rgba(0,0,0,.45);color-scheme:dark}
+.serif,h2,#setup h1{font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;letter-spacing:-.01em}
 *{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
-html{height:100%;min-height:var(--appH,100%);overflow:hidden;background:#f6f1e4}
-body{margin:0;position:relative;height:100%;height:var(--appH,100%);overflow:hidden;background:#f6f1e4;--sb:max(env(safe-area-inset-bottom),22px)}
+html{height:100%;min-height:var(--appH,100%);overflow:hidden;background:#22141d}
+body{margin:0;position:relative;height:100%;height:var(--appH,100%);overflow:hidden;background:#22141d;--sb:max(env(safe-area-inset-bottom),22px)}
 body{font:16px/1.5 'DM Sans',system-ui,-apple-system,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;cursor:pointer}
-#map{position:absolute;inset:0;z-index:0;background:#f6f1e4}
+#map{position:absolute;inset:0;z-index:0;background:#22141d}
+body[data-mapstyle=abend] #map{background:#22141d}
 body[data-mapstyle=nacht] #map{background:#1e2827}
 body[data-mapstyle=schlicht] #map{background:#f5f3f0}body[data-mapstyle=natur] #map{background:#f6f1e4}
 svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 .top{position:absolute;top:calc(env(safe-area-inset-top) + 30px);left:12px;right:12px;display:flex;gap:8px;justify-content:space-between;z-index:500;pointer-events:none}
 .top>*{pointer-events:auto}
-.topfade{position:absolute;left:0;right:0;top:0;height:calc(env(safe-area-inset-top) + 18px);background:linear-gradient(var(--fade,#f6f1e4),transparent);opacity:.85;z-index:450;pointer-events:none}
+.topfade{position:absolute;left:0;right:0;top:0;height:calc(env(safe-area-inset-top) + 18px);background:linear-gradient(var(--fade,#22141d),transparent);opacity:.85;z-index:450;pointer-events:none}
 .chip{background:var(--chip);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-radius:999px;box-shadow:var(--sh);height:44px;padding:0 16px;display:flex;align-items:center;gap:9px;border:0;font-weight:700;white-space:nowrap}
 .chip.ic{width:44px;padding:0;justify-content:center}
 .dot{flex:none;width:9px;height:9px;border-radius:50%;background:#9aa0a8}.dot.ok{background:#22c55e}.dot.off{background:#f59e0b}.dot.err{background:#ef4444}
@@ -46,13 +47,14 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .fab{width:48px;height:48px;border-radius:50%;border:0;background:var(--chip);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:var(--sh);display:grid;place-items:center}
 .fab.main{width:64px;height:64px;background:var(--acc);color:#fff}
 .fab.main svg{width:28px;height:28px;stroke-width:2.4}
-.leaflet-control-attribution{font:10px/1.4 'DM Sans',sans-serif!important;background:rgba(255,255,255,.6)!important;border-radius:6px 0 0 0}
+.leaflet-control-attribution{font:10px/1.4 'DM Sans',sans-serif!important;background:rgba(28,16,22,.6)!important;color:#b89aa8!important;border-radius:6px 0 0 0}
+.leaflet-control-attribution a{color:#e3cfd6!important}
 .leaflet-bottom.leaflet-left{margin-bottom:calc(var(--sb) - 6px)}
 
 .pin{background:none;border:0}
-.pin-b{position:relative;width:48px;height:48px;border-radius:50%;background:var(--acc);border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.35);display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px}
+.pin-b{position:relative;width:48px;height:48px;border-radius:50%;background:var(--acc);border:3px solid var(--haut);box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 18px rgba(242,84,45,.35);display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px}
 .pin-b img,.leaflet-container .leaflet-marker-pane .pin-b img{width:42px!important;height:42px!important;max-width:42px!important;max-height:42px!important;border-radius:50%;object-fit:cover;display:block}
-.pin-b::after{content:'';position:absolute;left:50%;top:100%;margin-top:-1px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid #fff}
+.pin-b::after{content:'';position:absolute;left:50%;top:100%;margin-top:-1px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid var(--haut)}
 .me{width:18px;height:18px;border-radius:50%;background:#2f80ff;border:3px solid #fff;box-shadow:0 0 0 6px rgba(47,128,255,.22)}
 
 #cross{position:absolute;left:50%;top:50%;width:48px;height:58px;margin:-58px 0 0 -24px;z-index:600;pointer-events:none;display:none}
@@ -63,21 +65,21 @@ body.placing #cross,body.placing #placeHint{display:block}
 body.placing #placeBar{display:flex}
 body.placing .fabs,body.placing .top{display:none}
 
-.scrim{position:absolute;inset:0;background:rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .2s;z-index:900}
+.scrim{position:absolute;inset:0;background:rgba(20,8,14,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:900}
 .scrim.on{opacity:1;pointer-events:auto}
-.sheet{position:absolute;left:0;right:0;bottom:0;z-index:1000;background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.22);max-height:88vh;max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:8px 20px calc(var(--sb) + 18px);transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);max-width:560px;margin:0 auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:1000;background:var(--bg) radial-gradient(120% 60% at 90% 0%,rgba(107,36,64,.35),transparent 70%) no-repeat;border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-height:88vh;max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:8px 20px calc(var(--sb) + 18px);transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);max-width:560px;margin:0 auto}
 .sheet.on{transform:none}
 @media (prefers-reduced-motion:reduce){.sheet,.scrim{transition:none}}
 .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:2px auto 8px}
 .x{position:absolute;right:10px;top:8px;width:44px;height:44px;border:0;background:none;display:grid;place-items:center;color:var(--mut)}
-h2{font-size:24px;line-height:1.1;margin:6px 48px 16px 0;text-wrap:balance}
+h2{font-size:30px;line-height:1.08;margin:6px 48px 16px 0;text-wrap:balance}
 h3{font-size:16px;margin:22px 0 8px}
 .mut{color:var(--mut)}.small{font-size:14px}
 p{margin:0 0 10px}
 
 .btn{min-height:48px;border-radius:14px;border:0;padding:0 18px;font-weight:700;background:var(--field);display:inline-flex;align-items:center;justify-content:center;gap:8px}
 .btn.primary{background:var(--acc);color:#fff}
-.btn.danger{color:#e5484d}
+.btn.danger{color:#ff7a7f}
 .btn.wide{width:100%;margin-top:8px}
 .btn:focus-visible,.fab:focus-visible,.chip:focus-visible,.choice:focus-visible,.item:focus-visible,.st:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 .row-btns{display:flex;gap:10px;margin-top:18px}.row-btns .btn{flex:1}
@@ -164,7 +166,7 @@ div.item{padding:0;gap:4px}
 .tog{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--mut);cursor:pointer;min-height:44px}
 .tog input{position:absolute;opacity:0;width:1px;height:1px}
 .tog .sw{width:42px;height:26px;border-radius:13px;background:var(--line);position:relative;transition:background .2s;flex:none}
-.tog .sw::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+.tog .sw::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--haut);box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
 .tog input:checked+.sw{background:var(--sug)}
 .tog input:checked+.sw::after{transform:translateX(16px)}
 .tog input:focus-visible+.sw{outline:3px solid var(--acc);outline-offset:2px}
@@ -192,26 +194,27 @@ body.placing #routeBar{display:none}
 .seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .seg .btn{padding:0 8px}
 
-#toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 86px);transform:translate(-50%,-10px);background:#16191d;color:#fff;padding:10px 16px;border-radius:12px;font-size:15px;z-index:3000;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px);text-align:center}
+#toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 86px);transform:translate(-50%,-10px);background:var(--haut);color:var(--nacht);font-weight:500;padding:10px 16px;border-radius:12px;font-size:15px;z-index:3000;box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px);text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 
-#setup{position:absolute;inset:0;z-index:2000;background:var(--bg);overflow-y:auto;padding:calc(env(safe-area-inset-top) + 24px) 22px calc(env(safe-area-inset-bottom) + 28px);display:none}
+#setup{position:absolute;inset:0;z-index:2000;background:radial-gradient(120% 70% at 80% 0%,#4a1f36 0%,#2b1424 45%,#1c1016 80%);overflow-y:auto;padding:calc(env(safe-area-inset-top) + 24px) 22px calc(env(safe-area-inset-bottom) + 28px);display:none}
 body.needs-setup #setup{display:block}
 #setup .wrap{max-width:520px;margin:0 auto}
-#setup h1{font-size:44px;line-height:1.05;margin:10px 0 8px}
-#setup .art{display:block;width:100%;height:auto;border-radius:22px;margin-bottom:18px}
+#setup h1{font-size:44px;line-height:1.02;margin:8px 0 10px}
+#setup .marke{font-weight:700;letter-spacing:.02em;font-size:18px;margin:0 0 4px}
+#setup .art{display:block;width:100%;height:auto;margin:0 0 10px}
 #setup ol{padding-left:20px;margin:6px 0 14px;color:var(--mut)}
 
-.err{color:#e5484d;font-weight:500;min-height:1.5em;margin-top:10px}
+.err{color:#ff7a7f;font-weight:500;min-height:1.5em;margin-top:10px}
 .form label.chk{display:flex;gap:12px;align-items:flex-start;color:var(--ink);font-size:15px;font-weight:400}
 .chk a{color:var(--acc)}
 .chk input{width:22px;height:22px;flex:none;margin:1px 0 0;padding:0;-webkit-appearance:checkbox;appearance:auto;accent-color:var(--acc)}
 .chk input[type=radio]{-webkit-appearance:radio}
 .top .rgt{display:flex;gap:8px}
-.chip.on{background:#3a1f33;color:#fff}
-.pub-b{width:38px;height:38px;border-radius:50%;background:#3a1f33;color:#fff;border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.35);display:grid;place-items:center;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
+.chip.on{background:var(--acc);color:#fff}
+.pub-b{width:38px;height:38px;border-radius:50%;background:var(--wein);color:var(--haut);border:3px solid var(--haut);box-shadow:0 3px 10px rgba(0,0,0,.35);display:grid;place-items:center;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
 .pub-b svg{width:18px;height:18px}
-.av.pubav{background:#3a1f33}.av.pubav svg{width:40px;height:40px}
+.av.pubav{background:var(--wein)}.av.pubav svg{width:40px;height:40px}
 .av.xs{width:36px;height:36px;font-size:14px;border-width:2px;box-shadow:none}
 .badge{display:inline-flex;align-items:center;gap:6px;background:var(--field);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700;margin:10px 0 0}
 .badge svg{width:16px;height:16px}
@@ -261,17 +264,20 @@ body.needs-setup #setup{display:block}
 
 <div id="setup">
   <form class="wrap form" id="setupForm">
-    <svg class="art" viewBox="0 0 520 220" aria-hidden="true">
-      <rect width="520" height="220" fill="#16313a"/>
-      <g fill="none" stroke="#2c5560" stroke-width="2">
-        <path d="M-10 60C80 30 140 90 230 70S400 10 530 50"/><path d="M-10 110C90 80 160 140 260 118S420 70 530 104"/>
-        <path d="M-10 160C70 140 170 190 270 168S430 130 530 158"/><path d="M-10 205C100 180 190 230 300 210S440 185 530 200"/>
+    <svg class="art" viewBox="0 0 520 200" aria-hidden="true">
+      <defs><filter id="sgl" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="28"/></filter></defs>
+      <g fill="none" stroke="#f6e9e4" stroke-opacity=".08" stroke-width="1.5">
+        <path d="M-10 50C90 20 160 80 260 58S420 10 530 40"/><path d="M-10 100C90 70 170 130 270 106S430 60 530 92"/>
+        <path d="M-10 150C80 128 180 178 280 156S440 118 530 146"/><path d="M-10 196C100 172 200 222 300 200S450 172 530 190"/>
       </g>
-      <g transform="translate(150 54)"><path d="M24 57 16 44h16z" fill="#fff"/><circle cx="24" cy="24" r="21" fill="#f5b301" stroke="#fff" stroke-width="3"/></g>
-      <g transform="translate(340 96)"><path d="M24 57 16 44h16z" fill="#fff"/><circle cx="24" cy="24" r="21" fill="#7cc4b8" stroke="#fff" stroke-width="3"/></g>
-      <g transform="translate(232 70) scale(1.5)"><path d="M24 57 16 44h16z" fill="#fff"/><circle cx="24" cy="24" r="21" fill="#f2542d" stroke="#fff" stroke-width="3"/><circle cx="24" cy="24" r="6" fill="#fff"/></g>
+      <circle cx="262" cy="86" r="70" fill="#ff6a4d" opacity=".5" filter="url(#sgl)"/>
+      <path d="M150 210C170 170 210 150 236 132S250 118 252 114" fill="none" stroke="#f6e9e4" stroke-opacity=".45" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 10"/>
+      <path d="M390 210C360 172 320 152 296 134S280 120 276 115" fill="none" stroke="#f6e9e4" stroke-opacity=".45" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 10"/>
+      <g transform="translate(252 116) rotate(11) translate(-36 -86) scale(1.5)"><path d="M24 57 16 44h16z" fill="#f6e9e4"/><circle cx="24" cy="24" r="21" fill="#f2542d" stroke="#f6e9e4" stroke-width="3"/></g>
+      <g transform="translate(278 116) rotate(-8) translate(-42 -100) scale(1.75)"><path d="M24 57 16 44h16z" fill="#f6e9e4"/><circle cx="24" cy="24" r="21" fill="#f6e9e4"/><path fill="#f2542d" d="M24 33.5s-9.5-5.8-9.5-12.6a5.4 5.4 0 0 1 9.5-3.5 5.4 5.4 0 0 1 9.5 3.5c0 6.8-9.5 12.6-9.5 12.6z"/></g>
     </svg>
-    <h1>GS</h1>
+    <p class="marke">GS</p>
+    <h1>Orte, die nur ihr zwei kennt.</h1>
     <p class="mut" id="setupIntro"></p>
     <div id="setupFields"></div>
     <button class="btn primary wide" type="submit" id="lgBtn">Anmelden</button>
@@ -303,7 +309,7 @@ const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 Zeichen, ohne I/O/0/1
 const APP_VERSION = (document.querySelector('meta[name=app-version]') || {}).content || '0';
 const ATTR = '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Daten von <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 const OFM = 'https://tiles.openfreemap.org/styles/';
-const STYLES = { natur: { name: 'Natur', pal: 'natur' }, nacht: { name: 'Nacht', pal: 'nacht' }, schlicht: { name: 'Schlicht', ofm: 'positron' } };
+const STYLES = { abend: { name: 'Abend', pal: 'abend' }, natur: { name: 'Natur', pal: 'natur' }, nacht: { name: 'Nacht', pal: 'nacht' }, schlicht: { name: 'Schlicht', ofm: 'positron' } };
 /* Eigene Paletten: Natur-Pastell (Tag) und gedämpftes Waldgrün (Nacht) */
 const PAL = {
   natur: { bg: '#f6f1e4', farm: '#f0e7c9', resid: '#efe8dd', indus: '#ece4e2', grass: '#dcebc2', park: '#c4e3ad', cem: '#d3e6c6', pitch: '#cde7bb',
@@ -315,7 +321,13 @@ const PAL = {
     wet: '#22383a', sand: '#38342a', rock: '#2b2f2f', ice: '#2d383c', wood: '#2f5137', woodEdge: '#3d6646', tree: '#5d9a66', paisle: '#4f7d60', parkDot: '#6b716d', dotRing: '#1e2827', prot: '#5fbf86', protLine: '#7fd3a2',
     water: '#1c3a4b', waterLine: '#295267', bld: '#2c3535', bldLine: '#364141', path: '#7d6f57', rail: '#3d4545', border: '#8f7fb0',
     motor: '#6b5640', motorC: '#3f3327', major: '#544838', majorC: '#3a3229', mid: '#3d4544', midC: '#2b3232', minor: '#384241', minorC: '#283030',
-    parkP: '#6fbf8f', relief: 0.25, bright: 0.35 }
+    parkP: '#6fbf8f', relief: 0.25, bright: 0.35 },
+  // Abend: dieselbe Nacht wie auf der Startseite – Pflaume, Wein, warme Wege
+  abend: { bg: '#22141d', farm: '#28171f', resid: '#271620', indus: '#2a1922', grass: '#2b1a24', park: '#331f2c', cem: '#2e1c28', pitch: '#301e2a',
+    wet: '#251c30', sand: '#33241f', rock: '#2b1d24', ice: '#2c2533', wood: '#382232', woodEdge: '#45293d', tree: '#6a4560', paisle: '#5a3a4e', parkDot: '#7d5e6e', dotRing: '#22141d', prot: '#b07a95', protLine: '#c48aa6',
+    water: '#1d1a31', waterLine: '#2c2749', bld: '#2f1c28', bldLine: '#3b2532', path: '#8a6168', rail: '#43303b', border: '#8f7fb0',
+    motor: '#7a3e44', motorC: '#4a2830', major: '#62343c', majorC: '#43262e', mid: '#46293a', midC: '#2f1c26', minor: '#3d2531', minorC: '#2a1922',
+    parkP: '#c48aa6', relief: 0.22, bright: 0.32 }
 };
 function buildStyle(P) {
   const S = 'openmaptiles';
@@ -500,7 +512,9 @@ function initMap() {
   const v = LS.get('spots.view', { c: [51.1, 10.4], z: 6 });
   map = L.map('map', { zoomControl: false, attributionControl: false, worldCopyJump: true }).setView(v.c, v.z);
   L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map);
-  setStyle(LS.get('spots.style', 'natur'));
+  // Neues Design: einmalig auf „Abend“ umstellen; danach gilt die eigene Wahl
+  if (!LS.get('spots.design2', false)) { LS.set('spots.design2', true); LS.set('spots.style', 'abend'); }
+  setStyle(LS.get('spots.style', 'abend'));
   map.on('moveend', () => { const c = map.getCenter(); LS.set('spots.view', { c: [c.lat, c.lng], z: map.getZoom() }); });
 }
 function treeImage(col) {
@@ -547,9 +561,9 @@ async function loadStyle(k) {
   }
   return JSON.parse(styleCache[k]);
 }
-const STYLE_BG = { natur: '#f6f1e4', nacht: '#1e2827', schlicht: '#f5f3f0' };
+const STYLE_BG = { abend: '#22141d', natur: '#f6f1e4', nacht: '#1e2827', schlicht: '#f5f3f0' };
 async function setStyle(k) {
-  if (!STYLES[k]) k = 'natur';
+  if (!STYLES[k]) k = 'abend';
   document.body.dataset.mapstyle = k; LS.set('spots.style', k);
   document.documentElement.style.background = document.body.style.background = STYLE_BG[k];
   document.body.style.setProperty('--fade', STYLE_BG[k]);
