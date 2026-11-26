@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-24">
+<meta name="app-version" content="2026.11.26-25">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -215,6 +215,21 @@ body.needs-setup #setup{display:block}
 .chk input[type=radio]{-webkit-appearance:radio}
 .top .rgt{display:flex;gap:8px}
 .chip.on{background:var(--acc);color:#fff}
+.top .lft{display:flex;gap:8px;min-width:0}
+#wishBtn{position:relative}
+#wishBtn.on{background:var(--koralle,#f2542d);color:#fff}#wishBtn.on svg{fill:currentColor}
+#wishBtn .bd{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:9px;background:var(--koralle,#f2542d);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px var(--chip)}
+#wishBtn.on .bd{background:#fff;color:var(--koralle,#f2542d)}
+.merk{flex:none;width:44px;height:44px;border:0;background:none;color:var(--mut);display:grid;place-items:center;border-radius:50%;cursor:pointer}
+.merk svg{width:24px;height:24px}
+.merk.on{color:var(--koralle,#f2542d)}.merk.on svg{fill:currentColor}
+.head .merk{margin-left:auto;background:var(--line)}
+.wishpin{display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45)) drop-shadow(0 0 8px rgba(242,84,45,.5))}
+.wishpin svg{display:block;width:100%;height:100%;overflow:visible}
+.badge.wish{background:rgba(242,84,45,.16);color:var(--koralle,#f2542d)}
+.badge.wish svg{fill:currentColor}
+.besucht{margin:14px 0 4px}
+.form.offen .ratesec{display:none}
 .herz{position:relative;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45)) drop-shadow(0 0 10px var(--hz,transparent))}
 .herz svg{display:block;width:100%;height:100%;overflow:visible}
 .herz b{position:absolute;left:0;right:0;top:30%;text-align:center;font-size:11px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px rgba(0,0,0,.35)}
@@ -252,7 +267,7 @@ body.needs-setup #setup{display:block}
 <div class="topfade"></div>
 
 <div class="top">
-  <button class="chip" data-act="list" aria-label="Alle Spots anzeigen"><span class="dot" id="dot"></span><span id="stxt">Spots</span></button>
+  <div class="lft"><button class="chip" data-act="list" aria-label="Alle Spots anzeigen"><span class="dot" id="dot"></span><span id="stxt">Spots</span></button><button class="chip ic" id="wishBtn" data-act="wish" aria-label="Favoriten – noch nicht besucht – ein- oder ausblenden" aria-pressed="false"></button></div>
   <div class="rgt"><button class="chip ic" id="pubBtn" data-act="pub" aria-label="Öffentliche Karte ein- oder ausblenden" aria-pressed="false" data-ic="globe"></button><button class="chip ic" data-act="settings" aria-label="Einstellungen" data-ic="gear"></button></div>
 </div>
 <div class="fabs">
@@ -316,7 +331,7 @@ const FIREBASE_CONFIG = {
   appId: '1:1009677457222:web:c3eb3d2029ccc804503747'
 };
 const LEGACY_MAP = 'main';    // die erste gemeinsame Karte von Nils und Samira
-const LEGACY = ['nilshrnr@icloud.com', 'fritz.samira.28.08@gmail.com']; // die zwei ersten Konten (brauchen keinen Code)
+const LEGACY_UIDS = ['8Vm4gmz4WzbCMdHwZFsvsXYTIXP2']; // erstes Konto (Betreiber) – per Konto-ID statt E-Mail, damit keine Adressen im öffentlichen Code stehen
 const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 Zeichen, ohne I/O/0/1
 const APP_VERSION = (document.querySelector('meta[name=app-version]') || {}).content || '0';
 const ATTR = '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Daten von <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
@@ -436,7 +451,8 @@ const IC = {
   route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>',
   globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9M12 3c-2.5 2.6-3.8 5.6-3.8 9s1.3 6.4 3.8 9"/>',
   flag: '<path d="M5 21V4M5 4h12l-2.5 4 2.5 4H5"/>',
-  camera: '<path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/>'
+  camera: '<path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/>',
+  heart: '<path d="M12 20.3s-8-4.9-8-10.3A4.4 4.4 0 0 1 12 7.4 4.4 4.4 0 0 1 20 10c0 5.4-8 10.3-8 10.3z"/>'
 };
 const STAR = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>';
 
@@ -458,7 +474,7 @@ let map, tiles, meMarker = null, fs = null, unsub = null, userEmail = '', update
 let mode = '', openId = null, draft = null, placing = null, results = [], firstSnap = true;
 const pins = new Map(), markers = new Map();
 let setupM = 'login', registering = false, me = { uid: '', profile: undefined }, profUnsub = null, pdraft = null, profPrompted = false;
-const isLegacy = () => LEGACY.includes(userEmail.toLowerCase());
+const isLegacy = () => !!me.uid && LEGACY_UIDS.includes(me.uid);
 const normCode = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const fmtCode = c => c.length === 8 ? c.slice(0, 4) + '-' + c.slice(4) : c;
 const appUrl = () => location.origin + location.pathname.replace(/index\.html$/, '');
@@ -601,13 +617,20 @@ async function setStyle(k) {
     setTimeout(() => { if (req === styleReq) setStyle(document.body.dataset.mapstyle); }, 15000);
   }
 }
+// Favoriten = Spots mit „noch nicht besucht“ (offen). Herz oben schaltet zwischen besuchten Spots und Favoriten um.
+let WISH = !!LS.get('spots.wish', false);
+const sichtbar = p => WISH ? !!p.offen : !p.offen;
+const sichtPins = () => [...pins.values()].filter(sichtbar);
+const wishPins = () => [...pins.values()].filter(p => p.offen);
 function pinIcon(p) {
+  if (p.offen) return L.divIcon({ className: 'pin', html: `<span class="wishpin" style="width:40px;height:40px"><svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="M12 21.6s-9.6-5.9-9.6-12.3A5.2 5.2 0 0 1 12 6.2a5.2 5.2 0 0 1 9.6 3.1c0 6.4-9.6 12.3-9.6 12.3z" fill="#f2542d" stroke="#f6e9e4" stroke-width="1.6"/><path d="M12 11.2l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" fill="#fff8f2"/></svg></span>`, iconSize: [40, 40], iconAnchor: [20, 37] });
   const inner = okPhoto(p.photo) ? `<img src="${p.photo}" alt="">` : esc(initials(p.name));
   return L.divIcon({ className: 'pin', html: `<div class="pin-b">${inner}</div>`, iconSize: [48, 58], iconAnchor: [24, 58] });
 }
-const sig = p => (p.photo ? p.photo.length + p.photo.slice(-32) : '') + '|' + p.name;
+const sig = p => (p.photo ? p.photo.length + p.photo.slice(-32) : '') + '|' + p.name + '|' + (p.offen ? 1 : 0);
 function upsertMarker(p) {
   let m = markers.get(p.id);
+  if (!sichtbar(p)) { if (m) { m.remove(); markers.delete(p.id); } return; }
   if (!m) {
     m = L.marker([p.lat, p.lng], { icon: pinIcon(p), title: p.name }).addTo(map);
     m.on('click', () => showProfile(m._pid));
@@ -619,8 +642,9 @@ function upsertMarker(p) {
   m._sig = sig(p);
 }
 function fitAll() {
-  if (!pins.size) { toast('Noch keine Spots auf der Karte'); return; }
-  const b = L.latLngBounds([...pins.values()].map(p => [p.lat, p.lng]));
+  const vis = sichtPins();
+  if (!vis.length) { toast(WISH ? 'Noch keine Favoriten' : 'Noch keine Spots auf der Karte'); return; }
+  const b = L.latLngBounds(vis.map(p => [p.lat, p.lng]));
   map.fitBounds(b, { padding: [70, 70], maxZoom: 16 });
 }
 function panAbove(ll) {
@@ -690,12 +714,12 @@ async function doSearch() {
   } catch (e) { box.innerHTML = `<p class="empty">${esc(e.message)}</p>`; }
 }
 function newDraft(lat, lng, address = '') {
-  draft = { name: '', desc: '', address, autoAddr: address, lat, lng, photo: '', r: { g: 0, a: 0, u: 0 }, pub: false, pubBy: '' };
+  draft = { name: '', desc: '', address, autoAddr: address, lat, lng, photo: '', r: { g: 0, a: 0, u: 0 }, pub: false, pubBy: '', offen: WISH };
   showForm();
 }
 function showForm() {
   const d = draft;
-  open(`<form id="pf" class="form"><h2>${d.id ? 'Spot bearbeiten' : 'Neuer Spot'}</h2>
+  open(`<form id="pf" class="form${d.offen ? ' offen' : ''}"><h2>${d.id ? 'Spot bearbeiten' : 'Neuer Spot'}</h2>
     <label class="photo"><input type="file" accept="image/*" id="photoIn"><span id="photoPrev">${d.photo ? avatar(d) : '<span class="av ph">+</span>'}</span>
       <span><span class="t">${d.photo ? 'Foto ändern' : 'Profilbild wählen'}</span><br><span class="small">Wird klein auf der Karte gezeigt</span></span></label>
     ${d.photo ? '<button type="button" class="linkbtn" data-act="rmphoto" style="margin:-8px 0 8px">Foto entfernen</button>' : ''}
@@ -704,10 +728,11 @@ function showForm() {
     <div class="addrrow"><label>Adresse<input id="fAddr" maxlength="200" value="${esc(d.address)}" placeholder="Adresse wird ermittelt…" autocomplete="off"></label>
       <button type="button" class="btn" data-act="readdr" aria-label="Adresse aus Position neu ermitteln">${ico('refresh')}</button></div>
     <button type="button" class="linkbtn" data-act="move">Position auf der Karte ändern</button>
-    <h3>Bewertung</h3>
+    <label class="chk"><input type="checkbox" id="fOffen"${d.offen ? ' checked' : ''}><span><b>${ico('heart')} Noch nicht besucht</b><br><span class="small mut">Landet in euren Favoriten (Herz oben). Bewerten könnt ihr, sobald ihr da wart.</span></span></label>
+    <div class="ratesec"><h3>Bewertung</h3>
     ${CATS.map(([k, l]) => `<div class="rate"><span>${l}</span><span class="r">${stars(k, d.r[k], true)}<span class="n" id="n-${k}">${d.r[k]}/10</span></span></div>`).join('')}
     <p class="small mut" style="margin-top:6px">Linke Sternhälfte = halber Stern. Nochmal auf denselben Wert tippen setzt auf 0.</p>
-    <label class="chk pubchk"><input type="checkbox" id="fPub"${d.pub ? ' checked' : ''}><span><b>Auf der öffentlichen Karte teilen</b><br><span class="small mut">Ohne Fotos. Andere sehen von dir nur dein Profilbild und „${esc(kurz(myName()))}“.${d.pubBy && d.pubBy !== me.uid ? ' Ein anderes Mitglied hat diesen Spot geteilt.' : ''}</span></span></label>
+    <label class="chk pubchk"><input type="checkbox" id="fPub"${d.pub ? ' checked' : ''}><span><b>Auf der öffentlichen Karte teilen</b><br><span class="small mut">Ohne Fotos. Andere sehen von dir nur dein Profilbild und „${esc(kurz(myName()))}“.${d.pubBy && d.pubBy !== me.uid ? ' Ein anderes Mitglied hat diesen Spot geteilt.' : ''}</span></span></label></div>
     <div class="row-btns"><button type="button" class="btn" data-act="cancel">Abbrechen</button><button type="submit" class="btn primary">Speichern</button></div>
   </form>`, 'form');
   if (!d.address) autoAddress();
@@ -718,6 +743,7 @@ function syncDraft() {
   draft.desc = $('#fDesc').value.trim();
   draft.address = $('#fAddr').value.trim();
   const pb = $('#fPub'); if (pb) draft.pub = pb.checked;
+  const po = $('#fOffen'); if (po) draft.offen = po.checked;
 }
 function autoAddress() {
   const d = draft; if (!d) return;
@@ -742,10 +768,11 @@ function showProfile(id, keepView) {
   const when = fmtDate(p.updatedAt) || fmtDate(p.createdAt);
   open(`<div class="head">${avatar(p)}<div><h2>${esc(p.name)}</h2><p class="addr">${esc(p.address || 'Keine Adresse')}</p></div></div>
     ${p.pub ? `<span class="badge">${ico('globe')} Öffentlich geteilt${p.pub !== me.uid ? ' (von einem Mitglied)' : ''}</span>` : ''}
-    <div class="score"><b>${clampR(r.g)}</b><div>${stars('g', clampR(r.g))}<small>Gesamt von 10</small></div></div>
-    ${CATS.slice(1).map(([k, l]) => `<div class="rate"><span>${l}</span><span class="r">${stars(k, clampR(r[k]))}<span class="n">${clampR(r[k])}/10</span></span></div>`).join('')}
+    ${p.offen ? `<span class="badge wish">${ico('heart')} Favorit · noch nicht besucht</span>
+    <button class="btn primary wide besucht" data-act="besucht" data-id="${esc(p.id)}">Wir waren da – jetzt bewerten</button>` : `<div class="score"><b>${clampR(r.g)}</b><div>${stars('g', clampR(r.g))}<small>Gesamt von 10</small></div></div>
+    ${CATS.slice(1).map(([k, l]) => `<div class="rate"><span>${l}</span><span class="r">${stars(k, clampR(r[k]))}<span class="n">${clampR(r[k])}/10</span></span></div>`).join('')}`}
     ${p.desc ? `<p class="desc">${esc(p.desc)}</p>` : '<p class="desc mut">Noch keine Beschreibung.</p>'}
-    <button class="btn wide" data-act="fav" data-id="${esc(p.id)}" style="margin-top:4px">${ico('pushpin')} ${p.fav ? 'Aus Favoriten entfernen' : 'Als Favorit anheften'}</button>
+    <button class="btn wide" data-act="fav" data-id="${esc(p.id)}" style="margin-top:4px">${ico('pushpin')} ${p.fav ? 'Nicht mehr anheften' : 'Oben in der Liste anheften'}</button>
     ${navHtml(p.lat, p.lng, p.name)}
     <div class="row-btns"><button class="btn danger" data-act="del">Löschen</button><button class="btn primary" data-act="edit">Bearbeiten</button></div>
     ${when ? `<p class="small mut" style="margin-top:12px">Zuletzt geändert am ${esc(when)}</p>` : ''}`, 'profile');
@@ -755,7 +782,7 @@ const LIST_STEP = 10;
 let listLimit = LIST_STEP, listQuery = '';
 function rowHtml(p, k = 'g') {
   return `<div class="item"><button class="item-main" data-act="open" data-id="${esc(p.id)}">${avatar(p, 's')}<span class="t"><b>${esc(p.name)}</b><small>${esc(p.address || '')}</small></span>${stars(k, clampR(p.r && p.r[k]))}</button>
-    <button class="pinbtn${p.fav ? ' on' : ''}" data-act="fav" data-id="${esc(p.id)}" aria-label="${p.fav ? 'Aus Favoriten entfernen' : 'Als Favorit anheften'}" aria-pressed="${p.fav ? 'true' : 'false'}">${ico('pushpin')}</button></div>`;
+    <button class="pinbtn${p.fav ? ' on' : ''}" data-act="fav" data-id="${esc(p.id)}" aria-label="${p.fav ? 'Nicht mehr anheften' : 'Oben anheften'}" aria-pressed="${p.fav ? 'true' : 'false'}">${ico('pushpin')}</button></div>`;
 }
 /* Sortierung: mehrere Kriterien, Reihenfolge = Priorität; nichts gewählt = A–Z */
 const SORTS = {
@@ -772,7 +799,7 @@ function sortedPins() {
     g: (a, b) => clampR(b.r.g) - clampR(a.r.g), a: (a, b) => clampR(b.r.a) - clampR(a.r.a), u: (a, b) => clampR(b.r.u) - clampR(a.r.u),
     new: (a, b) => tsOf(b) - tsOf(a), old: (a, b) => tsOf(a) - tsOf(b)
   };
-  return [...pins.values()].sort((a, b) => {
+  return sichtPins().sort((a, b) => {
     for (const k of sortSel) { const d = cmp[k](a, b); if (d) return d; }
     return String(a.name).localeCompare(String(b.name), 'de');
   });
@@ -800,7 +827,7 @@ function renderSortUi(keepOpen) {
   listLimit = LIST_STEP;
   const el = $('#lres'); if (el) el.innerHTML = listBodyHtml();
 }
-const favPins = () => [...pins.values()].filter(p => p.fav > 0).sort((a, b) => a.fav - b.fav);
+const favPins = () => sichtPins().filter(p => p.fav > 0).sort((a, b) => a.fav - b.fav);
 function filteredPins() {
   const q = listQuery.trim().toLowerCase();
   const all = sortedPins();
@@ -808,11 +835,11 @@ function filteredPins() {
 }
 function favHtml() {
   const f = favPins();
-  return f.length ? f.map(p => rowHtml(p)).join('') : '<p class="hint">Tippe bei einem Spot auf die Nadel, um ihn hier oben anzuheften – bis zu 5 Favoriten.</p>';
+  return f.length ? f.map(p => rowHtml(p)).join('') : '<p class="hint">Tippe bei einem Spot auf die Nadel, um ihn hier oben anzuheften – bis zu 5 Spots.</p>';
 }
 function listBodyHtml() {
   const arr = filteredPins();
-  if (!pins.size) return '<p class="hint">Noch keine Spots. Tippe unten rechts auf Plus, um den ersten Ort zu setzen.</p>';
+  if (!sichtPins().length) return WISH ? '<p class="hint">Noch keine Favoriten. Tippe bei öffentlichen Spots und Vorschlägen auf das Herz oder setz beim Anlegen eines Spots das Häkchen „Noch nicht besucht“.</p>' : '<p class="hint">Noch keine Spots. Tippe unten rechts auf Plus, um den ersten Ort zu setzen.</p>';
   if (!arr.length) return '<p class="empty">Keine Spots für diese Suche.</p>';
   const rest = arr.length - listLimit;
   const k = rowKey();
@@ -821,16 +848,17 @@ function listBodyHtml() {
 }
 function showList() {
   listLimit = LIST_STEP;
-  open(`<h2>${esc((curKarte && curKarte.name) || 'Spots')} <span class="mut" id="lcount">${pins.size}</span></h2>
+  open(`<h2>${WISH ? `${ico('heart')} Favoriten` : esc((curKarte && curKarte.name) || 'Spots')} <span class="mut" id="lcount">${sichtPins().length}</span></h2>
+    ${WISH ? '<p class="small mut" style="margin:-8px 0 6px">Orte, an denen ihr noch nicht wart. Wart ihr da, öffne den Ort und tippe auf „Wir waren da“.</p>' : ''}
     <button class="linkbtn" data-act="karten" style="margin:-12px 0 0;min-height:36px">${karten.length > 1 ? 'Karte wechseln' : 'Karten verwalten'}</button>
-    <div class="sec" style="margin-top:4px"><h3>Favoriten</h3><span class="mut" id="fcount">${favPins().length}/5</span></div>
+    <div class="sec" style="margin-top:4px"><h3>Angeheftet</h3><span class="mut" id="fcount">${favPins().length}/5</span></div>
     <div class="favs" id="favBox">${favHtml()}</div>
     <div class="searchrow2">
       <div class="searchbox">${ico('search')}<input id="lq" type="search" value="${esc(listQuery)}" placeholder="Spots durchsuchen" aria-label="Spots durchsuchen" autocomplete="off"></div>
       <button class="sortbtn${sortSel.length ? ' act' : ''}" id="sortBtn" data-act="sort-menu" aria-label="Sortieren" aria-haspopup="true">${ico('sort')}${sortSel.length ? `<span class="bd">${sortSel.length}</span>` : ''}</button>
       <div class="sortmenu" id="sortMenu" role="menu">${sortMenuHtml()}</div>
     </div>
-    <div class="sec"><h3>Alle Spots</h3><span class="sortinfo" id="sortInfo">${esc(sortInfo())}</span></div>
+    <div class="sec"><h3>${WISH ? 'Alle Favoriten' : 'Alle Spots'}</h3><span class="sortinfo" id="sortInfo">${esc(sortInfo())}</span></div>
     <div id="lres">${listBodyHtml()}</div>
     <div class="sec" style="margin-top:30px"><h3>Vorschläge</h3>
       <label class="tog"><input type="checkbox" id="sugTog" ${SUG.show ? 'checked' : ''}><span class="sw"></span>Auf Karte</label></div>
@@ -844,7 +872,7 @@ function refreshList() {
   const sq = $('#sugQ'), sqv = sq ? sq.value : null, sqf = sq && document.activeElement === sq;
   set('#favBox', favHtml()); set('#lres', listBodyHtml()); set('#sugBox', sugHtml());
   const sq2 = $('#sugQ'); if (sq2 && sqv !== null) { sq2.value = sqv; if (sqf) sq2.focus(); }
-  const c = $('#lcount'); if (c) c.textContent = pins.size;
+  const c = $('#lcount'); if (c) c.textContent = sichtPins().length;
   const f = $('#fcount'); if (f) f.textContent = favPins().length + '/5';
   $('#sheet').scrollTop = y;
 }
@@ -852,16 +880,65 @@ function toggleFav(id) {
   const p = pins.get(id); if (!p || !fs) return;
   let v = 0;
   if (!p.fav) {
-    if (favPins().length >= 5) { toast('Maximal 5 Favoriten – entferne zuerst einen'); return; }
+    if (favPins().length >= 5) { toast('Maximal 5 angeheftete Spots – löse zuerst einen'); return; }
     v = Date.now();
   }
   const before = p.fav;
   p.fav = v; // sofort anzeigen …
   fs.F.updateDoc(fs.F.doc(pinCol(), id), { fav: v })
-    .then(() => toast(v ? 'Favorit gespeichert' : 'Favorit entfernt'))   // … und erst bestätigen, wenn der Server es hat
-    .catch(e => { p.fav = before; if (mode === 'list') refreshList(); toast('Favorit nicht gespeichert: ' + errHint(e), 7000); });
+    .then(() => toast(v ? 'Oben angeheftet' : 'Nicht mehr angeheftet'))   // … und erst bestätigen, wenn der Server es hat
+    .catch(e => { p.fav = before; if (mode === 'list') refreshList(); toast('Anheften nicht gespeichert: ' + errHint(e), 7000); });
   if (mode === 'list') refreshList();
   else if (mode === 'profile' && openId === id) { const y = $('#sheet').scrollTop; showProfile(id, true); $('#sheet').scrollTop = y; }
+}
+
+/* ---------- Favoriten: noch nicht besuchte Orte ---------- */
+function wishBtn() {
+  const b = $('#wishBtn'); if (!b) return;
+  const n = wishPins().length;
+  b.classList.toggle('on', WISH); b.setAttribute('aria-pressed', WISH ? 'true' : 'false');
+  b.innerHTML = ico('heart') + (n && !WISH ? `<span class="bd">${n > 99 ? '99+' : n}</span>` : '');
+}
+function statusText(snap) {
+  const n = sichtPins().length;
+  const pend = snap && snap.metadata.hasPendingWrites, off = snap && snap.metadata.fromCache;
+  const kn = curKarte && curKarte.name ? curKarte.name.slice(0, 18) + ' · ' : '';
+  setStatus(WISH ? `Favoriten · ${n}${off ? ' · offline' : pend ? ' · speichert…' : ''}` : `${kn}${n} ${n === 1 ? 'Spot' : 'Spots'}${off ? ' · offline' : pend ? ' · speichert…' : ''}`, off || pend ? 'off' : 'ok');
+}
+let lastSnap = null;
+function toggleWish(on = !WISH) {
+  WISH = on; LS.set('spots.wish', WISH);
+  document.body.classList.toggle('wish', WISH);
+  for (const p of pins.values()) upsertMarker(p);
+  wishBtn(); statusText(lastSnap);
+  if (WISH) {
+    const vis = sichtPins();
+    if (!vis.length) toast('Noch keine Favoriten. Tippe bei öffentlichen Spots oder Vorschlägen aufs Herz – oder setz beim Anlegen „Noch nicht besucht“.', 6000);
+    else { toast(`Favoriten: ${vis.length} ${vis.length === 1 ? 'Ort' : 'Orte'}, an denen ihr noch nicht wart`, 3000); if (!vis.some(p => map.getBounds().contains([p.lat, p.lng]))) fitAll(); }
+  } else toast('Wieder alle besuchten Spots');
+  if (mode === 'list') showList();
+}
+const merkPin = key => [...pins.values()].find(p => p.offen && p.quelle === key);
+const merkHtml = (key, extra = '') => { const on = !!merkPin(key); return `<button type="button" class="merk${on ? ' on' : ''}" data-act="merk" data-key="${esc(key)}"${extra} aria-pressed="${on}" aria-label="${on ? 'Aus Favoriten entfernen' : 'Zu Favoriten – noch nicht besucht'}">${ico('heart')}</button>`; };
+const sugKey = s => 'sug:' + s.lat.toFixed(5) + ',' + s.lng.toFixed(5);
+async function merkToggle(btn) {
+  if (!fs || !curKid) { toast('Leg zuerst eine Karte an'); return; }
+  const key = btn.dataset.key, ex = merkPin(key), { F } = fs;
+  try {
+    if (ex) {
+      await F.deleteDoc(F.doc(pinCol(), ex.id));
+      toast('Aus Favoriten entfernt');
+    } else {
+      let d = null;
+      if (key.startsWith('ort:')) { const o = await ortHolen(key.slice(4)); if (o) d = { name: o.name, address: o.address || '', lat: o.lat, lng: o.lng }; }
+      else if (key.startsWith('sug:')) { const s = SUG.items.find(x => sugKey(x) === key); if (s) d = { name: s.t === 'park' && s.name === SUG_T.park.label ? 'Waldparkplatz' : s.name, address: s.addr || '', lat: s.lat, lng: s.lng }; }
+      if (!d) { toast('Dieser Ort ist nicht mehr da'); return; }
+      const ref = F.doc(pinCol());
+      await F.setDoc(ref, { name: String(d.name).slice(0, 80), desc: '', address: String(d.address).slice(0, 200), lat: d.lat, lng: d.lng, photo: '', r: { g: 0, a: 0, u: 0 }, rs: 10, pub: null, offen: true, quelle: key, by: me.uid, createdAt: F.serverTimestamp(), updatedAt: F.serverTimestamp() });
+      toast(WISH ? 'In Favoriten gespeichert' : 'In Favoriten gespeichert – das Herz oben zeigt alle', 3500);
+    }
+  } catch (e) { toast('Nicht gespeichert: ' + errHint(e), 6000); return; }
+  for (const b of document.querySelectorAll(`.merk[data-key="${CSS.escape(key)}"]`)) { const on = !!merkPin(key); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', on ? 'Aus Favoriten entfernen' : 'Zu Favoriten – noch nicht besucht'); }
 }
 
 /* ---------- Navigation & Route ---------- */
@@ -942,7 +1019,7 @@ function sugHtml() {
   const list = SUG.items.filter(s => !nearSaved(s)).slice(0, 12);
   const head = sugSearchHtml() + `<p class="small mut" style="margin:0 0 4px">${esc(SUG.originLabel)}</p>`;
   if (!list.length) return head + '<p class="hint">Hier in der Nähe nichts Passendes gefunden. Verschiebe die Karte und suche dort.</p><button class="btn more" data-act="sug-here">Im Kartenausschnitt suchen</button>';
-  return head + list.map(s => `<button class="item" data-act="sug" data-i="${SUG.items.indexOf(s)}"><span class="sico">${sugIcon(s.t)}</span><span class="t"><b>${esc(s.name)}</b><small>${esc(SUG_T[s.t].label)}${s.inWood && s.t !== 'park' ? ' · im Wald' : ''}</small></span><span class="dist">${fmtKm(s.d)}</span></button>`).join('') +
+  return head + list.map(s => `<div class="item"><button class="item-main" data-act="sug" data-i="${SUG.items.indexOf(s)}"><span class="sico">${sugIcon(s.t)}</span><span class="t"><b>${esc(s.name)}</b><small>${esc(SUG_T[s.t].label)}${s.inWood && s.t !== 'park' ? ' · im Wald' : ''}</small></span><span class="dist">${fmtKm(s.d)}</span></button>${merkHtml(sugKey(s))}</div>`).join('') +
     '<button class="btn more" data-act="sug-here">Im aktuellen Kartenausschnitt suchen</button>';
 }
 // Suchfeld: Vorschläge an einem anderen Ort (Ort, PLZ, Gegend) statt am eigenen Standort
@@ -973,7 +1050,7 @@ function sugReset() {
   toast('Suche zurückgesetzt – Vorschläge wieder rund um deinen Standort');
   loadSuggestions(true);
 }
-const nearSaved = s => [...pins.values()].some(p => distM([p.lat, p.lng], [s.lat, s.lng]) < 80);
+const nearSaved = s => [...pins.values()].some(p => !p.offen && distM([p.lat, p.lng], [s.lat, s.lng]) < 80); // besuchte Spots blenden Vorschläge aus, Favoriten nicht
 async function sugOrigin(useMap) {
   if (!useMap && SUG.place) return { c: SUG.place.c, label: 'Rund um ' + SUG.place.name };
   if (!useMap) {
@@ -1089,7 +1166,7 @@ function drawSugMarkers() {
 function showSug(i) {
   const s = SUG.items[i]; if (!s) return;
   panAbove([s.lat, s.lng]);
-  open(`<div class="head"><span class="sico" style="width:64px;height:64px;font-size:24px">${sugIcon(s.t)}</span><div><h2>${esc(s.name)}</h2><p class="addr" id="sugAddr">${esc(SUG_T[s.t].label)} · ${fmtKm(s.d)} entfernt</p></div></div>
+  open(`<div class="head"><span class="sico" style="width:64px;height:64px;font-size:24px">${sugIcon(s.t)}</span><div><h2>${esc(s.name)}</h2><p class="addr" id="sugAddr">${esc(SUG_T[s.t].label)} · ${fmtKm(s.d)} entfernt</p></div>${merkHtml(sugKey(s))}</div>
     <p class="mut" style="margin-top:12px">Vorschlag aus den Kartendaten${s.inWood ? ', liegt im oder direkt am Wald' : ''}. Gefällt er dir, speichere ihn als eigenen Spot mit Foto und Bewertung.</p>
     <button class="btn primary wide" data-act="sug-save" data-i="${i}">${ico('plus')} Als Spot speichern</button>
     ${navHtml(s.lat, s.lng, s.name)}
@@ -1354,7 +1431,7 @@ function authMsg(e) {
 async function register() {
   const err = $('#setupErr');
   const email = $('#lgEmail').value.trim(), pw = $('#lgPw').value;
-  const first = LEGACY.includes(email.toLowerCase()); // erste Konten brauchen keinen Code
+  const first = false; // neue Konten brauchen immer einen Code
   let inv; try { inv = readInvite(first); } catch (e) { err.textContent = e.message; return; }
   if (!email) { err.textContent = 'Bitte gib deine E-Mail ein.'; return; }
   if (pw.length < 6) { err.textContent = 'Das Passwort braucht mindestens 6 Zeichen.'; return; }
@@ -1737,14 +1814,12 @@ function onSnap(snap) {
   snap.forEach(d => {
     const x = d.data() || {};
     if (!finite(x.lat) || !finite(x.lng)) return;
-    const p = { id: d.id, name: String(x.name || 'Ohne Namen').slice(0, 80), desc: String(x.desc || '').slice(0, 1000), address: String(x.address || '').slice(0, 200), lat: x.lat, lng: x.lng, photo: okPhoto(x.photo) ? x.photo : '', r: (() => { const rr = x.r || {}, sc = x.rs === 10 ? 1 : 2; return { g: clampR((Number(rr.g) || 0) * sc), a: clampR((Number(rr.a) || 0) * sc), u: clampR((Number(rr.u) || 0) * sc) }; })(), fav: Number(x.fav) || 0, pub: typeof x.pub === 'string' ? x.pub.slice(0, 80) : '', createdAt: x.createdAt, updatedAt: x.updatedAt };
+    const p = { id: d.id, name: String(x.name || 'Ohne Namen').slice(0, 80), desc: String(x.desc || '').slice(0, 1000), address: String(x.address || '').slice(0, 200), lat: x.lat, lng: x.lng, photo: okPhoto(x.photo) ? x.photo : '', r: (() => { const rr = x.r || {}, sc = x.rs === 10 ? 1 : 2; return { g: clampR((Number(rr.g) || 0) * sc), a: clampR((Number(rr.a) || 0) * sc), u: clampR((Number(rr.u) || 0) * sc) }; })(), fav: Number(x.fav) || 0, pub: typeof x.pub === 'string' ? x.pub.slice(0, 80) : '', offen: x.offen === true, quelle: typeof x.quelle === 'string' ? x.quelle.slice(0, 80) : '', createdAt: x.createdAt, updatedAt: x.updatedAt };
     seen.add(d.id); pins.set(d.id, p); upsertMarker(p);
   });
   for (const id of [...pins.keys()]) if (!seen.has(id)) { pins.delete(id); const m = markers.get(id); if (m) m.remove(); markers.delete(id); }
-  const n = pins.size;
-  const pend = snap.metadata.hasPendingWrites, off = snap.metadata.fromCache;
-  const kn = curKarte && curKarte.name ? curKarte.name.slice(0, 18) + ' · ' : '';
-  setStatus(`${kn}${n} ${n === 1 ? 'Spot' : 'Spots'}${off ? ' · offline' : pend ? ' · speichert…' : ''}`, off || pend ? 'off' : 'ok');
+  const n = sichtPins().length;
+  lastSnap = snap; statusText(snap); wishBtn();
   if (firstSnap) { firstSnap = false; if (n && (!hadView || fitNext)) fitAll(); fitNext = false; if (SUG.show) setTimeout(() => loadSuggestions(false), 800); }
   if (mode === 'profile' && openId) {
     if (!pins.has(openId)) { closeSheet(); toast('Dieser Spot wurde gelöscht'); }
@@ -1759,8 +1834,10 @@ function savePin() {
   if (!d.name) { toast('Bitte gib dem Spot einen Namen'); $('#fName').focus(); return; }
   if (!fs) { toast('Nicht verbunden'); return; }
   const { F } = fs;
-  const data = { name: d.name, desc: d.desc, address: d.address, lat: d.lat, lng: d.lng, photo: d.photo || '', r: { g: clampR(d.r.g), a: clampR(d.r.a), u: clampR(d.r.u) }, rs: 10, pub: d.pub ? (d.pubBy || me.uid) : null, updatedAt: F.serverTimestamp() };
-  if (d.pub && !d.pubBy) setTimeout(() => toast('Geteilt – erscheint gleich auf der öffentlichen Karte'), 400);
+  const data = { name: d.name, desc: d.desc, address: d.address, lat: d.lat, lng: d.lng, photo: d.photo || '', r: { g: clampR(d.r.g), a: clampR(d.r.a), u: clampR(d.r.u) }, rs: 10, pub: d.pub && !d.offen ? (d.pubBy || me.uid) : null, offen: !!d.offen, updatedAt: F.serverTimestamp() };
+  if (d.offen && !WISH) setTimeout(() => toast('In Favoriten gespeichert – das Herz oben zeigt alle', 3500), 400);
+  if (!d.offen && d.wasOffen && WISH) setTimeout(() => toast('Besucht! Der Spot ist jetzt bei euren Spots, nicht mehr in den Favoriten', 4000), 400);
+  else if (d.pub && !d.offen && !d.pubBy) setTimeout(() => toast('Geteilt – erscheint gleich auf der öffentlichen Karte'), 400);
   let id = d.id, pr;
   if (id) pr = F.updateDoc(F.doc(pinCol(), id), data);
   else { const ref = F.doc(pinCol()); id = ref.id; data.createdAt = F.serverTimestamp(); data.by = me.uid; pr = F.setDoc(ref, data); }
@@ -1896,7 +1973,7 @@ async function showOrt(oid, keepView) {
   const o = await ortHolen(oid);
   if (!o) { toast('Dieser Ort ist nicht mehr öffentlich'); return; }
   if (!keepView) panAbove([o.lat, o.lng]);
-  open(`<div id="ortBild"></div><div class="head"><span class="av herzav">${herzHtml(o, 64)}</span><div><h2>${esc(o.name)}</h2><p class="addr">${esc(o.address || 'Keine Adresse')}</p></div></div>
+  open(`<div id="ortBild"></div><div class="head"><span class="av herzav">${herzHtml(o, 64)}</span><div><h2>${esc(o.name)}</h2><p class="addr">${esc(o.address || 'Keine Adresse')}</p></div>${merkHtml('ort:' + o.id)}</div>
     <div class="score"><b>${o.r.g ? fmtR(o.r.g) : '–'}</b><div>${stars('g', Math.round(o.r.g))}<small>Durchschnitt aus ${o.n} ${o.n === 1 ? 'Bewertung' : 'Bewertungen'}</small></div></div>
     ${CATS.slice(1).map(([k, l]) => `<div class="rate"><span>${l}</span><span class="r">${stars(k, Math.round(o.r[k]))}<span class="n">${o.r[k] ? fmtR(o.r[k]) : '–'}</span></span></div>`).join('')}
     ${navHtml(o.lat, o.lng, o.name)}
@@ -2046,9 +2123,18 @@ document.addEventListener('click', e => {
     const p = pins.get(openId); if (!p) return;
     const id = openId;
     open('', 'form'); openId = null;
-    draft = { id, name: p.name, desc: p.desc, address: p.address, autoAddr: '', lat: p.lat, lng: p.lng, photo: p.photo, r: { g: clampR(p.r.g), a: clampR(p.r.a), u: clampR(p.r.u) }, pub: !!p.pub, pubBy: p.pub || '' };
+    draft = { id, name: p.name, desc: p.desc, address: p.address, autoAddr: '', lat: p.lat, lng: p.lng, photo: p.photo, r: { g: clampR(p.r.g), a: clampR(p.r.a), u: clampR(p.r.u) }, pub: !!p.pub, pubBy: p.pub || '', offen: p.offen, wasOffen: p.offen };
     showForm();
   }
+  else if (a === 'besucht') {
+    const p = pins.get(b.dataset.id); if (!p) return;
+    open('', 'form'); openId = null;
+    draft = { id: p.id, name: p.name, desc: p.desc, address: p.address, autoAddr: '', lat: p.lat, lng: p.lng, photo: p.photo, r: { g: 0, a: 0, u: 0 }, pub: false, pubBy: '', offen: false, wasOffen: true };
+    showForm();
+    toast('Wie war’s? Bewerte den Ort und speichere', 3000);
+  }
+  else if (a === 'wish') toggleWish();
+  else if (a === 'merk') merkToggle(b);
   else if (a === 'del') { const p = pins.get(openId); if (p) confirmBox(`„${p.name}“ löschen?`, 'Der Spot verschwindet auf allen verbundenen Handys. Das lässt sich nicht rückgängig machen.', 'Löschen', 'del-yes', p.id); }
   else if (a === 'del-yes') deletePin(b.dataset.id);
   else if (a === 'back') { if (pins.has(b.dataset.id)) showProfile(b.dataset.id, true); else closeSheet(); }
@@ -2081,6 +2167,7 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('change', async e => {
   if (e.target.id === 'ortFotoIn') { ortFotoSenden(e.target); return; }
+  if (e.target.id === 'fOffen') { const f = $('#pf'); if (f) f.classList.toggle('offen', e.target.checked); if (draft) draft.offen = e.target.checked; return; }
   if (e.target.id === 'pushTog') { if (e.target.checked) pushAn(e.target); else pushAus(); return; }
   if (e.target.id === 'sugTog') {
     SUG.show = e.target.checked; LS.set('spots.sugShow', SUG.show);
@@ -2107,6 +2194,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (placin
 
 /* ---------- Start ---------- */
 for (const el of document.querySelectorAll('[data-ic]')) el.innerHTML = ico(el.dataset.ic);
+wishBtn(); document.body.classList.toggle('wish', WISH);
 if (typeof L === 'undefined') {
   document.body.innerHTML = '<p style="padding:40px 24px;font:17px/1.5 system-ui">Die Karte konnte nicht geladen werden. Bitte Internetverbindung prüfen und die App neu öffnen.</p>';
 } else {

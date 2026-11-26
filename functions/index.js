@@ -298,8 +298,9 @@ async function profilAufraeumen(uid) {
 }
 
 exports.spotGeaendert = onDocumentWritten('karten/{kid}/pins/{pid}', async event => {
-  const a = event.data.after.exists ? event.data.after.data() : null;
+  let a = event.data.after.exists ? event.data.after.data() : null;
   const b = event.data.before.exists ? event.data.before.data() : null;
+  if (a && a.offen === true && a.pub) a = { ...a, pub: null }; // noch nicht besucht → nie öffentlich
   if (!(a && a.pub) && !(b && b.pub)) return; // war und ist privat → nichts zu tun
   await spotSync(event.params.kid, event.params.pid, a);
 });
@@ -443,7 +444,8 @@ exports.neuerSpot = onDocumentCreated({ document: 'karten/{kid}/pins/{pid}', sec
   if (!andere.length) return 0;
   webpush.setVapidDetails('mailto:kontakt@geheimespots.de', VAPID_PUBLIC, VAPID_PRIVATE.value());
   const name = k.exists ? String(k.data().name || '').slice(0, 40) : '';
-  const payload = JSON.stringify({ title: 'GS', body: name ? `Neuer Spot auf „${name}“` : 'Neuer Spot auf eurer Karte', url: './', tag: 'spot-' + kid });
+  const was = p.offen === true ? 'Neuer Favorit' : 'Neuer Spot';
+  const payload = JSON.stringify({ title: 'GS', body: name ? `${was} auf „${name}“` : `${was} auf eurer Karte`, url: './', tag: 'spot-' + kid });
   let n = 0;
   for (const u of andere) n += await pushAn(u, payload);
   return n;

@@ -8,8 +8,9 @@ service cloud.firestore {
     function email() { return request.auth.token.email.lower(); }
     // Admin = Nils' Konto in projekt-fs (fest über die Nutzer-UID, nicht über die E-Mail)
     function isAdmin() { return signedIn() && request.auth.uid == '8Vm4gmz4WzbCMdHwZFsvsXYTIXP2'; }
-    // Die ersten Konten: dürfen sich ohne Einladungscode ein Profil anlegen und die erste Karte "main" nutzen
-    function legacy() { return signedIn() && email() in ['nilshrnr@icloud.com', 'fritz.samira.28.08@gmail.com']; }
+    // Das erste Konto (Betreiber): durfte sich ohne Einladungscode ein Profil anlegen und nutzt die erste Karte "main".
+    // Über die Konto-ID statt über E-Mail-Adressen, damit keine privaten Adressen im öffentlichen Code stehen.
+    function legacy() { return isAdmin(); }
 
     function kartePath(kid) { return /databases/$(database)/documents/karten/$(kid); }
     function mitgliedPath(kid, uid) { return /databases/$(database)/documents/karten/$(kid)/mitglieder/$(uid); }
