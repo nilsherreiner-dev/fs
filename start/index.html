@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1c1016">
 <meta name="description" content="GS ist eine private Karte für zwei. So bekommst du Zugang, installierst die App auf dem Handy und holst deinen Partner dazu.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GS">
+<meta property="og:title" content="GS – Orte, die nur ihr kennt">
+<meta property="og:description" content="Eure private Karte für ruhige Lieblingsorte – speichern, bewerten und mit Partner oder Familie teilen.">
+<meta property="og:url" content="https://app.geheimespots.de/start/">
+<meta property="og:image" content="https://app.geheimespots.de/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="GS – Orte, die nur ihr kennt. Zwei Pins mit Herz auf einer dunklen Karte.">
+<meta property="og:locale" content="de_DE">
+<meta name="twitter:card" content="summary_large_image">
 <title>GS – eure private Karte</title>
 <link rel="icon" href="../icon-192.png">
 <link rel="apple-touch-icon" href="../icon-180.png">
@@ -44,6 +55,16 @@ a{color:inherit}
 .knoepfe{display:flex;flex-wrap:wrap;gap:12px}
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 26px;border-radius:999px;font-weight:700;font-size:17px;text-decoration:none;border:0}
 .btn.voll{background:var(--koralle);color:#fff;box-shadow:0 8px 30px rgba(196,69,108,.35)}
+.wl{display:grid;gap:14px;max-width:520px;margin-top:8px;position:relative}
+.wl-feld{display:grid;gap:6px;font-weight:700;font-size:15px}
+.wl-feld input{font:inherit;font-size:17px;color:var(--haut);background:rgba(246,233,228,.07);border:1.5px solid rgba(246,233,228,.14);border-radius:14px;padding:14px 16px;outline:none}
+.wl-feld input:focus{border-color:var(--koralle)}
+.wl-ok{display:flex;gap:12px;align-items:flex-start;font-size:15px;color:var(--rauch);line-height:1.5}
+.wl-ok input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--koralle);flex:none}
+.wl-ok a{color:var(--kerze)}
+.wl-err{margin:0;min-height:1.2em;color:#ff9a9e;font-size:15px}
+.wl .btn{justify-self:start}
+.wl-status{max-width:520px;background:rgba(196,69,108,.16);border-radius:16px;padding:14px 18px;margin:8px 0 14px;line-height:1.5}
 .btn.rand{background:transparent;color:var(--haut);box-shadow:inset 0 0 0 1.5px rgba(246,233,228,.45)}
 .btn.dunkel{background:rgba(246,233,228,.1);color:var(--haut);box-shadow:inset 0 0 0 1.5px rgba(246,233,228,.25)}
 
@@ -147,9 +168,14 @@ footer span{margin-right:auto}
     <h2 id="was">Was GS kann</h2>
     <p class="intro">Kein Download aus dem App Store nötig: GS läuft im Browser und liegt danach wie eine normale App auf deinem Home-Bildschirm.</p>
     <ul class="kurz">
-      <li><b>Nur ihr zwei</b><span>Eure Karte sieht niemand außer euch. Wer dazukommt, bestimmt ihr mit einem Code.</span></li>
-      <li style="--farbe:var(--kerze)"><b>Ungestört bewertet</b><span>Sterne für Gesamt, Ambiente und wie ungestört ihr dort wart. Mit Foto, Adresse und Route dorthin.</span></li>
-      <li style="--farbe:var(--haut)"><b>Teilen, wenn ihr wollt</b><span>Einzelne Spots könnt ihr teilen – ohne Fotos, nur mit Profilbild und Kürzel wie „N…s“.</span></li>
+      <li><b>Nur für euch</b><span>Eure Karte sieht niemand außer euch – zu zweit oder mit der Familie. Wer dazukommt, bestimmt ihr mit einem Code.</span></li>
+      <li style="--farbe:var(--kerze)"><b>Ungestört bewertet</b><span>Sterne für Gesamt, Ambiente und wie ungestört ihr dort wart. Mit Adresse und Route dorthin.</span></li>
+      <li style="--farbe:var(--haut)"><b>Fünf Fotos pro Ort</b><span>Eine kleine Galerie zu jedem Spot. Die Bilder bleiben privat und gelangen nie auf die öffentliche Karte.</span></li>
+      <li><b>Eure Wunschliste</b><span>Orte, an denen ihr noch nicht wart, landen mit dem Schloss-Herz in euren Favoriten – bis ihr dort wart.</span></li>
+      <li style="--farbe:var(--kerze)"><b>Vorschläge in der Nähe</b><span>Aussichtspunkte, Picknickplätze und Waldparkplätze im Umkreis von 3, 5 oder 10 km – oder rund um jeden Ort, den ihr sucht.</span></li>
+      <li style="--farbe:var(--haut)"><b>Herzen anderer entdecken</b><span>Auf der öffentlichen Karte zeigt jedes Herz einen Lieblingsort: mit Riss unter 5 Punkten, ganzes Herz ab 5, Doppelherz ab 7. Filterbar.</span></li>
+      <li><b>Teilen, wenn ihr wollt</b><span>Einzelne Spots könnt ihr teilen – ohne Fotos, nur mit Profilbild und Kürzel wie „N…s“.</span></li>
+      <li style="--farbe:var(--kerze)"><b>Bescheid, wenn's Neues gibt</b><span>Auf Wunsch eine Benachrichtigung, sobald euer Partner einen Ort speichert. Ohne den Namen des Orts auf dem Sperrbildschirm.</span></li>
     </ul>
   </section>
 
@@ -206,6 +232,19 @@ footer span{margin-right:auto}
     </ol>
   </section>
 
+  <section id="warteliste" aria-labelledby="wlH">
+    <h2 id="wlH">Bald im App Store</h2>
+    <p class="intro">GS kommt als App für iPhone und Android. Trag dich ein, dann sagen wir dir einmal Bescheid, sobald es so weit ist.</p>
+    <div class="wl-status" id="wlStatus" role="status" hidden></div>
+    <form class="wl" id="wlForm" novalidate>
+      <label class="wl-feld">E-Mail<input type="email" id="wlEmail" autocomplete="email" inputmode="email" maxlength="120" required></label>
+      <input type="text" id="wlHp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px">
+      <label class="wl-ok"><input type="checkbox" id="wlOk"><span>Ich möchte eine E-Mail bekommen, sobald GS im App Store erscheint. Abmelden geht jederzeit über den Link in der Mail. Mehr in der <a href="../rechtliches/datenschutz.html#warteliste">Datenschutzerklärung</a>.</span></label>
+      <p class="wl-err" id="wlErr" aria-live="polite"></p>
+      <button class="btn voll" id="wlBtn" type="submit">Eintragen</button>
+    </form>
+  </section>
+
   <section aria-labelledby="fragenH">
     <h2 id="fragenH">Fragen</h2>
     <div class="fragen">
@@ -255,6 +294,59 @@ footer span{margin-right:auto}
   });
   if (/android/i.test(navigator.userAgent)) waehle(1);
 })();
+</script>
+<script type="module">
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBi8vKQETOYjboNPN72zPrSsuZQLUGOKqI',
+  authDomain: 'projekt-fs.firebaseapp.com',
+  projectId: 'projekt-fs',
+  storageBucket: 'projekt-fs.firebasestorage.app',
+  messagingSenderId: '1009677457222',
+  appId: '1:1009677457222:web:c3eb3d2029ccc804503747'
+};
+const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const $ = s => document.querySelector(s);
+const EMAIL_RE = /^[^@ ]+@[^@ ]+[.][^@ ]+$/;
+let fs = null;
+async function db() {
+  if (fs) return fs;
+  const [A, F] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-firestore.js')]);
+  fs = { F, db: F.getFirestore(A.initializeApp(FIREBASE_CONFIG)) };
+  return fs;
+}
+const status = (t, formWeg) => { const el = $('#wlStatus'); el.textContent = t; el.hidden = false; if (formWeg) $('#wlForm').hidden = true; $('#warteliste').scrollIntoView({ block: 'start' }); };
+$('#wlForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const err = $('#wlErr'), btn = $('#wlBtn'), email = $('#wlEmail').value.trim().toLowerCase();
+  if ($('#wlHp').value) { status('Danke! Schau in dein Postfach.', true); return; }
+  if (!EMAIL_RE.test(email) || email.length > 120) { err.textContent = 'Diese E-Mail-Adresse sieht nicht richtig aus.'; $('#wlEmail').focus(); return; }
+  if (!$('#wlOk').checked) { err.textContent = 'Bitte setz das Häkchen, damit wir dir schreiben dürfen.'; return; }
+  try { if (Date.now() - Number(localStorage.getItem('gs.wl') || 0) < 60000) { err.textContent = 'Bitte warte eine Minute.'; return; } } catch {}
+  err.textContent = ''; btn.disabled = true; btn.textContent = 'Wird eingetragen…';
+  try {
+    const { F, db: d } = await db();
+    await F.addDoc(F.collection(d, 'warteliste'), { email, einwilligung: '2026-11-26', createdAt: F.serverTimestamp(), bestaetigt: false });
+    try { localStorage.setItem('gs.wl', String(Date.now())); } catch {}
+    status('Fast geschafft: Wir haben dir eine E-Mail geschickt. Bitte bestätige darin deine Anmeldung – schau zur Sicherheit auch im Spam-Ordner nach.', true);
+  } catch {
+    err.textContent = 'Das hat nicht geklappt. Bitte versuch es später nochmal.';
+    btn.disabled = false; btn.textContent = 'Eintragen';
+  }
+});
+// Links aus der Bestätigungs-Mail
+const q = new URLSearchParams(location.search), was = q.get('warteliste'), id = q.get('id') || '';
+if ((was === 'bestaetigen' || was === 'abmelden') && /^[A-Za-z0-9]{10,40}$/.test(id)) {
+  history.replaceState(null, '', location.pathname + '#warteliste');
+  (async () => {
+    try {
+      const { F, db: d } = await db(), ref = F.doc(d, 'warteliste', id);
+      if (was === 'bestaetigen') { await F.updateDoc(ref, { bestaetigt: true, bestaetigtAm: F.serverTimestamp() }); status('Danke, deine Anmeldung ist bestätigt. Wir melden uns, sobald GS im App Store ist.', true); }
+      else { await F.deleteDoc(ref); status('Du bist abgemeldet und deine E-Mail-Adresse ist gelöscht.', false); }
+    } catch {
+      status(was === 'bestaetigen' ? 'Dieser Link ist nicht mehr gültig oder wurde schon benutzt. Trag dich bei Bedarf einfach neu ein.' : 'Abmelden hat nicht geklappt. Schreib uns an kontakt@geheimespots.de, dann löschen wir deine Adresse.', false);
+    }
+  })();
+}
 </script>
 </body>
 </html>

@@ -204,6 +204,10 @@ async function aufraeumen(now = Date.now()) {
     .concat((await db.collection('meldungen').where('status', '==', 'spam').get()).docs.filter(d => { const c = d.data().createdAt; return c && c.toMillis() < tag; }));
   for (let i = 0; i < alt.length; i += 400) { const b = db.batch(); alt.slice(i, i + 400).forEach(d => b.delete(d.ref)); await b.commit(); }
   n += alt.length;
+  // Unbestätigte Warteliste-Einträge nach 7 Tagen
+  const wl = (await db.collection('warteliste').where('bestaetigt', '==', false).get()).docs.filter(x => { const c = x.data().createdAt; return c && c.toMillis && c.toMillis() < now - 7 * 24 * 3600 * 1000; });
+  await Promise.all(wl.map(d => d.ref.delete()));
+  n += wl.length;
   // Nicht bearbeitete Fotovorschläge nach 90 Tagen
   const fv = await db.collection('ortFotos').where('createdAt', '<', Timestamp.fromMillis(now - 90 * 24 * 3600 * 1000)).get();
   await Promise.all(fv.docs.map(d => d.ref.delete()));
@@ -399,6 +403,44 @@ exports.neuerFotovorschlag = onDocumentCreated({ document: 'ortFotos/{fid}', sec
   try { await fotoHinweis(d.ort); } catch (e) { logger.warn('Foto-Hinweis fehlgeschlagen', e); }
 });
 
+/* ======================================================================
+ * Warteliste für die App-Store-Version: Double-Opt-in per Bestätigungs-Mail
+ * ====================================================================== */
+const WARTELISTE_LIMIT_PER_HOUR = 30;
+function wartelisteMail(id) {
+  const ja = `${APP_URL}start/?warteliste=bestaetigen&id=${encodeURIComponent(id)}`;
+  const nein = `${APP_URL}start/?warteliste=abmelden&id=${encodeURIComponent(id)}`;
+  const text = `Hallo,\n\ndu möchtest Bescheid bekommen, sobald GS im App Store erscheint. Bitte bestätige deine Anmeldung:\n\n${ja}\n\nWar das nicht du? Dann ignoriere diese Mail einfach – ohne Bestätigung löschen wir deine Adresse nach 7 Tagen.\n\nAbmelden geht jederzeit: ${nein}\n\nGS – geheime Spots\nkontakt@geheimespots.de`;
+  const html = `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="color-scheme" content="dark"></head><body style="margin:0;background:#1c1016;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#f6e9e4">
+<div style="max-width:520px;margin:0 auto;padding:32px 20px">
+  <div style="background:#2b1424;border-radius:22px 22px 0 0;padding:22px 24px 18px"><div style="font-size:16px;font-weight:700;margin:0 0 10px">GS</div><div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:26px;line-height:1.15">Fast geschafft</div></div>
+  <div style="background:#241520;border-radius:0 0 22px 22px;padding:22px 24px">
+    <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#e3cfd6">Du möchtest Bescheid bekommen, sobald GS im App Store erscheint. Bitte bestätige deine Anmeldung:</p>
+    <p style="margin:0 0 22px"><a href="${ja}" style="display:inline-block;background:#c4456c;color:#fff;text-decoration:none;font-weight:700;padding:13px 22px;border-radius:14px">Anmeldung bestätigen</a></p>
+    <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#b89aa8">War das nicht du? Dann ignoriere diese Mail einfach – ohne Bestätigung löschen wir deine Adresse nach 7 Tagen. <a href="${nein}" style="color:#f2b8c8">Abmelden</a> geht jederzeit.</p>
+    <p style="margin:6px 0 0;font-size:13px;color:#b89aa8">GS – geheime Spots · kontakt@geheimespots.de</p></div>
+</div></body></html>`;
+  return { html, text };
+}
+exports.neueWarteliste = onDocumentCreated({ document: 'warteliste/{id}', secrets: [BREVO_KEY] }, async event => {
+  const snap = event.data; if (!snap) return;
+  const d = snap.data() || {}, email = String(d.email || '').trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) { await snap.ref.delete(); return; }
+  const seit = Timestamp.fromMillis(Date.now() - 3600 * 1000);
+  const n = (await db.collection('warteliste').where('createdAt', '>', seit).get()).size;
+  if (n > WARTELISTE_LIMIT_PER_HOUR) { await snap.ref.delete(); logger.warn('Warteliste gedrosselt', { n }); return; }
+  const gleich = (await db.collection('warteliste').where('email', '==', email).get()).docs.filter(x => x.id !== snap.id);
+  if (gleich.length) { // schon eingetragen: keine zweite Adresse, höchstens die alte Bestätigung erneut schicken
+    await snap.ref.delete();
+    const alt = gleich[0], a = alt.data() || {};
+    const vor = a.createdAt && a.createdAt.toMillis ? Date.now() - a.createdAt.toMillis() : 0;
+    if (!a.bestaetigt && vor > 10 * 60 * 1000) { const m = wartelisteMail(alt.id); try { await sendMail(email, 'GS: Bitte bestätige deine Anmeldung', m.html, m.text); } catch (e) { logger.warn('Warteliste-Mail fehlgeschlagen', String(e)); } }
+    return;
+  }
+  const m = wartelisteMail(snap.id);
+  try { await sendMail(email, 'GS: Bitte bestätige deine Anmeldung', m.html, m.text); } catch (e) { logger.warn('Warteliste-Mail fehlgeschlagen', String(e)); }
+});
+
 /* Entscheidung an die meldende Person (Art. 16 Abs. 5 DSA) */
 exports.meldungEntschieden = onDocumentUpdated({ document: 'meldungen/{id}', secrets: [BREVO_KEY] }, async event => {
   const b = event.data.before.data() || {}, a = event.data.after.data() || {};
@@ -482,4 +524,4 @@ exports.kontoEntsperrt = onDocumentDeleted('kontosperren/{uid}', async event => 
 });
 
 // nur für lokale Tests
-if (process.env.FS_TEST) exports._test = { fotoHinweis, issue, inviteMail, genCode, aufraeumen, spotSync, ortRechnen, kurz, eidOf, distM, profilAufraeumen, gsMail };
+if (process.env.FS_TEST) exports._test = { fotoHinweis, wartelisteMail, issue, inviteMail, genCode, aufraeumen, spotSync, ortRechnen, kurz, eidOf, distM, profilAufraeumen, gsMail };

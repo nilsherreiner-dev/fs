@@ -151,6 +151,23 @@ service cloud.firestore {
     match /profile/{uid} {
       allow read: if signedIn();
     }
+    // Warteliste für die App-Store-Version (ohne Konto). Lesen nur Admin; bestätigen/abmelden nur mit der geheimen Dokument-ID aus der Mail
+    match /warteliste/{id} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['email', 'einwilligung', 'createdAt', 'bestaetigt'])
+        && request.resource.data.keys().hasAll(['email', 'einwilligung', 'createdAt', 'bestaetigt'])
+        && request.resource.data.email is string && request.resource.data.email.size() >= 6 && request.resource.data.email.size() <= 120
+        && request.resource.data.email.matches('[^@ ]+@[^@ ]+[.][^@ ]+')
+        && request.resource.data.einwilligung == '2026-11-26'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.bestaetigt == false;
+      allow update: if resource.data.bestaetigt == false
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bestaetigt', 'bestaetigtAm'])
+        && request.resource.data.bestaetigt == true
+        && request.resource.data.bestaetigtAm == request.time;
+      allow delete: if true;
+    }
+
     // Freigegebene Ortsfotos (nur Admin schreibt)
     match /ortBilder/{oid} {
       allow read: if signedIn();

@@ -115,6 +115,12 @@ body.in #login{display:none}body:not(.in) #app{display:none}
     </section>
 
     <section class="card">
+      <h2>Warteliste</h2>
+      <p class="small mut" style="margin:0" id="wlInfo">Lade…</p>
+      <button class="btn sm" data-a="wl-copy" data-id="" style="margin-top:8px">Bestätigte Adressen kopieren</button>
+    </section>
+
+    <section class="card">
       <h2>Ortsfotos <span class="n" id="nFoto" hidden></span></h2>
       <p class="small mut" style="margin:0">Vorschläge aus der App. Freigegebene Fotos erscheinen ohne Namen. Für Orte ohne Foto kannst du frei lizenzierte Bilder aus Wikimedia Commons in der Nähe suchen – die Quelle wird dann automatisch genannt.</p>
       <div class="tabs" id="fTabs">
@@ -166,6 +172,7 @@ const when = ts => { try { const d = ts && ts.toDate ? ts.toDate() : null; retur
 const STATUS = { neu: 'Neu', freigegeben: 'Freigegeben', sendet: 'Wird gesendet', verschickt: 'Verschickt', fehler: 'Fehler', abgelehnt: 'Abgelehnt', doppelt: 'Doppelt' };
 let fs = null, unsubs = [], anfragen = [], codes = [], names = {}, aFilter = 'offen', cFilter = 'alle';
 let meldungen = [], mFilter = 'offen', mInfo = {}, sperrKonten = [];
+let warteliste = [];
 let fotos = [], fFilter = 'offen', orteAlle = null, bildIds = new Set(), wiki = {}, wikiOffen = null;
 const GRUND = { person: 'Erkennbare Person/Kennzeichen', privat: 'Privatgrundstück/Wohnadresse', illegal: 'Gefährlich oder verboten', beleidigend: 'Beleidigend/unangemessen', falsch: 'Falsch/gibt es nicht mehr', sonstiges: 'Sonstiges' };
 let toastT;
@@ -189,6 +196,11 @@ function stop() { for (const u of unsubs) u(); unsubs = []; }
 function start() {
   const { F, db } = fs;
   unsubs.push(F.onSnapshot(F.doc(db, 'einstellungen', 'codes'), s => { $('#auto').checked = !!(s.exists() && s.data().auto); }, e => toast(errMsg(e), 5000)));
+  unsubs.push(F.onSnapshot(F.collection(db, 'warteliste'), s => {
+    warteliste = s.docs.map(d => d.data());
+    const ok = warteliste.filter(x => x.bestaetigt).length;
+    $('#wlInfo').textContent = `${ok} bestätigt · ${warteliste.length - ok} warten auf Bestätigung (werden nach 7 Tagen gelöscht). Nach dem App-Start: Adressen kopieren, einmal anschreiben, dann die Liste löschen.`;
+  }, e => { $('#wlInfo').textContent = errMsg(e); }));
   unsubs.push(F.onSnapshot(F.query(F.collection(db, 'ortFotos'), F.where('status', '==', 'offen')), s => {
     fotos = s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => ((a.createdAt && a.createdAt.toMillis()) || 0) - ((b.createdAt && b.createdAt.toMillis()) || 0));
     renderF(); orteLaden();
@@ -427,6 +439,7 @@ document.addEventListener('click', async e => {
   if (t && t.closest('#cTabs')) { cFilter = t.dataset.f; for (const b of document.querySelectorAll('#cTabs button')) b.classList.toggle('on', b === t); renderC(); return; }
   const b = e.target.closest('[data-a]'); if (!b) return;
   const id = b.dataset.id, a = b.dataset.a;
+  if (a === 'wl-copy') { const l = warteliste.filter(x => x.bestaetigt).map(x => x.email).join(', '); if (!l) { toast('Noch keine bestätigten Adressen'); return; } try { await navigator.clipboard.writeText(l); toast('Adressen kopiert – bitte als BCC versenden'); } catch { prompt('Adressen (als BCC versenden):', l); } return; }
   if (/^(f-ok|f-no|w-such|w-pick|b-weg)$/.test(a)) { b.disabled = true; await fotoAktion(a, id, b); b.disabled = false; return; }
   if (a === 'm-ok' || a === 'm-eintrag' || a === 'm-ort' || a === 'm-konto' || a === 'm-entfernt') { b.disabled = true; await moderate(id, a); b.disabled = false; }
   else if (a === 'k-frei') { if (!confirm('Konto wieder freigeben? Die Person kann sich dann wieder anmelden.')) return; b.disabled = true; try { await fs.F.deleteDoc(fs.F.doc(fs.db, 'kontosperren', id)); toast('Konto freigegeben'); } catch (er) { toast(errMsg(er), 5000); b.disabled = false; } }
