@@ -79,8 +79,8 @@ GS`;
       <li>Tippe auf Teilen und wähle „Zum Home-Bildschirm“.</li>
       <li>Öffne GS, tippe auf „Mit Einladungscode registrieren“ und gib den Code ein.</li>
     </ol>
-    <p style="text-align:center;margin:0 0 16px"><a href="${APP_URL}" style="display:inline-block;background:#f2542d;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 30px;border-radius:999px">GS öffnen</a></p>
-    <p style="text-align:center;margin:0 0 20px;font-size:14px"><a href="${APP_URL}start/" style="color:#ffb46b;font-weight:700">Anleitung Schritt für Schritt</a></p>
+    <p style="text-align:center;margin:0 0 16px"><a href="${APP_URL}" style="display:inline-block;background:#c4456c;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 30px;border-radius:999px">GS öffnen</a></p>
+    <p style="text-align:center;margin:0 0 20px;font-size:14px"><a href="${APP_URL}start/" style="color:#f2b8c8;font-weight:700">Anleitung Schritt für Schritt</a></p>
     <p style="margin:0;font-size:13px;color:#b89aa8;line-height:1.5">Der Code gilt für ein Konto. Wenn du diese Mail nicht erwartet hast, kannst du sie einfach ignorieren.</p>
   </div>
 </div></body></html>`;
@@ -268,6 +268,7 @@ async function spotSync(kid, pid, p) {
   if (ort) { const o = await db.doc('orte/' + ort).get(); if (!o.exists || distM(o.data(), p) > RADIUS) ort = null; }
   if (!ort) ort = await ortSuchen(p);
   const r = p.r || {}, sc = p.rs === 10 ? 1 : 2;
+  // Feste Feldliste: Spot-Foto (photo) und Galerie (Unterliste bilder) gelangen NIE in den öffentlichen Bereich
   const data = { ort, uid: pub, name: str(p.name, 80) || 'Ohne Namen', desc: str(p.desc, 1000), r: { g: cl10(r.g * sc), a: cl10(r.a * sc), u: cl10(r.u * sc) }, updatedAt: FieldValue.serverTimestamp() };
   if (!cur.exists) data.createdAt = FieldValue.serverTimestamp();
   await ref.set(data, { merge: true });

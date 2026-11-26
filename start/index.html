@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="../lib/fonts.css">
 <style>
 :root{
-  --nacht:#1c1016; --pflaume:#3a1f33; --wein:#6b2440; --kerze:#ffb46b; --koralle:#f2542d;
+  --nacht:#1c1016; --pflaume:#3a1f33; --wein:#6b2440; --kerze:#f2b8c8; --koralle:#c4456c;
   --haut:#f6e9e4; --rauch:#b89aa8; --linie:rgba(246,233,228,.14);
 }
 *{box-sizing:border-box}
@@ -43,7 +43,7 @@ a{color:inherit}
 .hero p.lead{font-size:clamp(18px,2.3vw,20px);line-height:1.6;max-width:36ch;margin:0 0 32px;color:#e3cfd6}
 .knoepfe{display:flex;flex-wrap:wrap;gap:12px}
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 26px;border-radius:999px;font-weight:700;font-size:17px;text-decoration:none;border:0}
-.btn.voll{background:var(--koralle);color:#fff;box-shadow:0 8px 30px rgba(242,84,45,.35)}
+.btn.voll{background:var(--koralle);color:#fff;box-shadow:0 8px 30px rgba(196,69,108,.35)}
 .btn.rand{background:transparent;color:var(--haut);box-shadow:inset 0 0 0 1.5px rgba(246,233,228,.45)}
 .btn.dunkel{background:rgba(246,233,228,.1);color:var(--haut);box-shadow:inset 0 0 0 1.5px rgba(246,233,228,.25)}
 
@@ -63,13 +63,13 @@ h2{font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;font-s
 .route{list-style:none;margin:0;padding:0;position:relative;counter-reset:schritt}
 .route>li{position:relative;padding:0 0 46px 78px;counter-increment:schritt;max-width:720px}
 .route>li:not(:last-child)::after{content:'';position:absolute;left:23px;top:60px;bottom:8px;border-left:2.5px dotted rgba(246,233,228,.35)}
-.route>li::before{content:counter(schritt);position:absolute;left:0;top:0;width:48px;height:48px;border-radius:50%;background:var(--koralle);color:#fff;font-weight:700;font-size:19px;display:grid;place-items:center;box-shadow:0 0 0 4px var(--nacht),0 0 26px rgba(242,84,45,.45)}
-.route>li:last-child::before{content:'';background:var(--haut) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f2542d' d='M12 20.5s-7.5-4.6-7.5-10.1A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.8c0 5.5-7.5 10.1-7.5 10.1z'/%3E%3C/svg%3E") center/26px no-repeat;box-shadow:0 0 0 4px var(--nacht),0 0 30px rgba(255,180,107,.45)}
+.route>li::before{content:counter(schritt);position:absolute;left:0;top:0;width:48px;height:48px;border-radius:50%;background:var(--koralle);color:#fff;font-weight:700;font-size:19px;display:grid;place-items:center;box-shadow:0 0 0 4px var(--nacht),0 0 26px rgba(196,69,108,.45)}
+.route>li:last-child::before{content:'';background:var(--haut) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23c4456c' d='M12 20.5s-7.5-4.6-7.5-10.1A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.8c0 5.5-7.5 10.1-7.5 10.1z'/%3E%3C/svg%3E") center/26px no-repeat;box-shadow:0 0 0 4px var(--nacht),0 0 30px rgba(242,184,200,.45)}
 .route h3{font-size:21px;line-height:1.3;margin:10px 0 6px;letter-spacing:-.005em}
 .route p{margin:0 0 10px;color:var(--rauch)}
 .route p strong{color:var(--haut);font-weight:700}
 .route .btn{margin-top:6px}
-.link{color:var(--kerze);font-weight:700;text-decoration:none;border-bottom:1.5px solid rgba(255,180,107,.4)}
+.link{color:var(--kerze);font-weight:700;text-decoration:none;border-bottom:1.5px solid rgba(242,184,200,.4)}
 .adr{display:inline-block;font-weight:700;color:var(--haut);background:rgba(246,233,228,.08);border-radius:10px;padding:6px 12px;margin:2px 0 10px;box-shadow:inset 0 0 0 1px var(--linie)}
 
 /* Gerät wählen */
@@ -123,12 +123,12 @@ footer span{margin-right:auto}
       <circle cx="640" cy="120" r="7" opacity=".7"/><circle cx="1150" cy="420" r="10" opacity=".5"/><circle cx="760" cy="520" r="6" opacity=".6"/>
       <circle cx="1080" cy="80" r="5" opacity=".8"/><circle cx="540" cy="300" r="4" opacity=".6"/><circle cx="1180" cy="230" r="6" opacity=".5"/>
     </g>
-    <circle class="glut" cx="934" cy="255" r="110" fill="#ff6a4d" opacity=".55" filter="url(#sehrweich)"/>
+    <circle class="glut" cx="934" cy="255" r="110" fill="#d65a82" opacity=".55" filter="url(#sehrweich)"/>
     <path class="weg" d="M700 830C720 680 790 580 840 500S900 380 906 334"/>
     <path class="weg" d="M1260 690C1150 640 1080 560 1030 470S970 370 962 336" style="animation-delay:.3s"/>
     <g class="paar">
-      <g transform="translate(910 330) rotate(11) translate(-42 -100) scale(1.75)"><path d="M24 57 16 44h16z" fill="#f6e9e4"/><circle cx="24" cy="24" r="21" fill="#f2542d" stroke="#f6e9e4" stroke-width="3"/></g>
-      <g transform="translate(958 330) rotate(-8) translate(-49 -117) scale(2.05)"><path d="M24 57 16 44h16z" fill="#f6e9e4"/><circle cx="24" cy="24" r="21" fill="#f6e9e4"/><path fill="#f2542d" d="M24 33.5s-9.5-5.8-9.5-12.6a5.4 5.4 0 0 1 9.5-3.5 5.4 5.4 0 0 1 9.5 3.5c0 6.8-9.5 12.6-9.5 12.6z"/></g>
+      <g transform="translate(910 330) rotate(11) translate(-42 -100) scale(1.75)"><path d="M24 57 16 44h16z" fill="#f6e9e4"/><circle cx="24" cy="24" r="21" fill="#c4456c" stroke="#f6e9e4" stroke-width="3"/></g>
+      <g transform="translate(958 330) rotate(-8) translate(-49 -117) scale(2.05)"><path d="M24 57 16 44h16z" fill="#f6e9e4"/><circle cx="24" cy="24" r="21" fill="#f6e9e4"/><path fill="#c4456c" d="M24 33.5s-9.5-5.8-9.5-12.6a5.4 5.4 0 0 1 9.5-3.5 5.4 5.4 0 0 1 9.5 3.5c0 6.8-9.5 12.6-9.5 12.6z"/></g>
     </g>
   </svg>
   <span class="marke">GS</span>
