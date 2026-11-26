@@ -60,22 +60,16 @@
 <p>GS fragt deinen Standort nur ab, wenn du darauf tippst, zum Beispiel auf „Mein Standort“ oder „Hier setzen“. Dein Handy fragt dich vorher um Erlaubnis. Der Standort wird auf deinem Gerät verarbeitet und nur gespeichert, wenn du dort einen Spot anlegst. Für Routen und Vorschläge in der Nähe werden die nötigen Koordinaten an die in Abschnitt 8 genannten Kartendienste übermittelt.</p>
 
 <h2>8. Dienstleister und Empfänger</h2>
-<p>GS nutzt die folgenden Dienste. Dabei wird technisch bedingt immer auch deine IP-Adresse übermittelt. Mit Google und Brevo bestehen Verträge zur Auftragsverarbeitung.</p>
-<table>
-<tr><th>Dienst</th><th>Wofür</th><th>Daten</th></tr>
-<tr><td>Google Firebase<br><small>Google Ireland Ltd., Irland</small></td><td>Anmeldung, Datenbank, Server-Funktionen. Datenbank und Funktionen laufen in Frankfurt.</td><td>alle Daten aus Abschnitt 3–6a</td></tr>
-<tr><td>Brevo<br><small>Sendinblue SAS, Frankreich</small></td><td>Versand von E-Mails: Einladungscodes, Bestätigungen und Entscheidungen zu Meldungen, Begründungen bei Sperren. Öffnungen und Klicks werden nur anonym gezählt.</td><td>E-Mail-Adresse, Inhalt der Mail</td></tr>
-<tr><td>STRATO<br><small>STRATO GmbH, Deutschland</small></td><td>Domain geheimespots.de und Postfach für kontakt@geheimespots.de</td><td>Inhalt von Mails, die du uns schreibst</td></tr>
-<tr><td>Microsoft Outlook.com<br><small>Microsoft Ireland Operations Ltd., Irland</small></td><td>Mails an kontakt@ werden in ein Outlook.com-Postfach weitergeleitet, in dem der Betreiber sie liest</td><td>Inhalt von Mails, die du uns schreibst</td></tr>
-<tr><td>GitHub Pages<br><small>GitHub Inc., USA</small></td><td>Auslieferung der App-Dateien</td><td>IP-Adresse, Zeitpunkt, aufgerufene Datei</td></tr>
-<tr><td>OpenFreeMap<br><small>openfreemap.org</small></td><td>Kartenbild und Vorschläge in der Nähe</td><td>IP-Adresse, angezeigter Kartenausschnitt</td></tr>
-<tr><td>Nominatim<br><small>OpenStreetMap Foundation, Vereinigtes Königreich</small></td><td>Adresssuche und Adresse zu einem Punkt</td><td>IP-Adresse, Suchbegriff bzw. Koordinaten</td></tr>
-<tr><td>Routing<br><small>FOSSGIS e.V., Deutschland; Project OSRM</small></td><td>Berechnung von Routen</td><td>IP-Adresse, Start- und Zielkoordinaten</td></tr>
-<tr><td>Push-Dienst deines Geräts<br><small>Apple, Google oder Mozilla – je nach Gerät und Browser</small></td><td>Zustellung von Benachrichtigungen, nur wenn du sie einschaltest</td><td>verschlüsselte Mitteilung, Push-Adresse deines Geräts</td></tr>
-</table>
-<p>Zum Laden der Firebase-Programmteile wird außerdem <i>gstatic.com</i> von Google aufgerufen. Bei Google, GitHub, Microsoft, Apple und Mozilla kann es zu Übermittlungen in die USA kommen. Diese stützen sich auf den Angemessenheitsbeschluss der EU-Kommission zum EU-US Data Privacy Framework bzw. auf Standardvertragsklauseln. Für Großbritannien besteht ein Angemessenheitsbeschluss.</p>
-<p>Die Kartendienste nutzen wir, damit die Karte, die Adresssuche und die Routen funktionieren (Art. 6 Abs. 1 lit. b und f DSGVO). Tippst du auf „Navi“, „Apple Karten“ oder „Google Maps“, öffnet sich die jeweilige App. Dort gilt deren Datenschutzerklärung.</p>
-<p>Schriften und Programmbibliotheken liefert GS selbst aus. Es werden keine Google Fonts geladen.</p>
+<p>Bei jedem Dienst wird technisch bedingt deine IP-Adresse übermittelt, dazu nur die Daten, die für den jeweiligen Zweck nötig sind.</p>
+<ul>
+<li><b>Google Firebase</b> (Google Ireland Ltd.): Anmeldung, Datenbank, Server-Funktionen, Sicherungen – Standort Frankfurt; Programmteile werden von gstatic.com geladen.</li>
+<li><b>Brevo</b> (Sendinblue SAS, Frankreich): Versand unserer E-Mails, Öffnungen nur anonym gezählt.</li>
+<li><b>STRATO</b> (STRATO GmbH, Deutschland) und <b>Microsoft Outlook.com</b> (Microsoft Ireland Operations Ltd.): Domain und Postfach für kontakt@; Mails werden zu Outlook.com weitergeleitet.</li>
+<li><b>GitHub Pages</b> (GitHub Inc., USA): Auslieferung der App.</li>
+<li><b>Kartendienste</b> (OpenFreeMap; OpenStreetMap Foundation, Vereinigtes Königreich; FOSSGIS e.V. / Project OSRM): Kartenbild, Adresssuche, Routen.</li>
+<li><b>Push-Dienst deines Geräts</b> (Apple, Google oder Mozilla): nur wenn du Benachrichtigungen einschaltest.</li>
+</ul>
+<p>Mit Google und Brevo bestehen Verträge zur Auftragsverarbeitung. Bei Google, GitHub, Microsoft, Apple und Mozilla sind Übermittlungen in die USA möglich; sie stützen sich auf das EU-US Data Privacy Framework bzw. Standardvertragsklauseln. Für Großbritannien gilt ein Angemessenheitsbeschluss. Rechtsgrundlage für die Dienste ist Art. 6 Abs. 1 lit. b und f DSGVO. Links zu Apple Karten oder Google Maps öffnen deren Apps mit eigener Datenschutzerklärung. Schriften liefert GS selbst aus, Google Fonts werden nicht geladen.</p>
 
 <h2>9. Speicherung auf deinem Gerät</h2>
 <p>GS legt auf deinem Gerät einen Zwischenspeicher an, damit die App schnell und auch kurz ohne Netz funktioniert. Er enthält den Anmeldestatus, eine Kopie deiner Daten und Einstellungen wie Kartenausschnitt, Kartenstil, Sortierung und die zuletzt geöffnete Karte. Außerdem richtet GS einen kleinen Hintergrunddienst (Service Worker) ein, der nur dafür da ist, Benachrichtigungen anzuzeigen. Das ist für die App unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Es gibt keine Tracking-Cookies.</p>
