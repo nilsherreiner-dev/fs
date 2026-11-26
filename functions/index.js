@@ -25,7 +25,7 @@ setGlobalOptions({ region: 'europe-west3', maxInstances: 3 });
 const BREVO_KEY = defineSecret('BREVO_KEY');
 const SENDER = { name: 'FS', email: 'einladung@geheimespots.de' };
 const ADMIN_MAIL = 'nilshrnr@icloud.com';
-const APP_URL = 'https://nilsherreiner-dev.github.io/fs/';
+const APP_URL = 'https://app.geheimespots.de/';
 const TOOL_URL = APP_URL + 'codes/';
 const ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 Zeichen, ohne I/O/0/1
 const AUTO_LIMIT_PER_HOUR = 30;              // Spam-Bremse für die Automatik
