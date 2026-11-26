@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-31">
+<meta name="app-version" content="2026.11.26-32">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -24,7 +24,7 @@ PICTURE: die randlose Karte selbst, Fotopins als runde Stecknadeln mit weißem R
 COLOUR/TYPE: Nacht in Pflaume und Wein, Koralle als Akzent, Kerzenlicht für Sterne; Fraunces kursiv für Überschriften, DM Sans für alles andere (wie Startseite)
 LAYOUT: Vollbildkarte, schwebende Knöpfe unten rechts, alles andere in Bottom-Sheets
 */
-:root{--nacht:#1c1016;--wein:#6b2440;--haut:#f6e9e4;--sug:#7b8f6a;--bg:#241520;--ink:#f6e9e4;--mut:#b89aa8;--line:#3d2836;--chip:rgba(36,21,32,.86);--acc:#8664c2;--koralle:#8664c2;--gold:#f2b8c8;--field:#311d2b;--sh:0 6px 24px rgba(0,0,0,.45);color-scheme:dark}
+:root{--nacht:#1c1016;--wein:#6b2440;--haut:#f6e9e4;--sug:#7b8f6a;--bg:#241520;--ink:#f6e9e4;--mut:#b89aa8;--line:#3d2836;--chip:rgba(36,21,32,.86);--acc:#c4456c;--koralle:#c4456c;--gold:#f2b8c8;--field:#311d2b;--sh:0 6px 24px rgba(0,0,0,.45);color-scheme:dark}
 .serif,h2,#setup h1{font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;letter-spacing:-.01em}
 *{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
 html{height:100%;min-height:var(--appH,100%);overflow:hidden;background:#22141d}
@@ -52,7 +52,7 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .leaflet-bottom.leaflet-left{margin-bottom:calc(var(--sb) - 6px)}
 
 .pin{background:none;border:0}
-.pin-b{position:relative;width:48px;height:48px;border-radius:50%;background:#4a2a3f;border:3px solid var(--haut);box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 18px rgba(134,100,194,.35);display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px}
+.pin-b{position:relative;width:48px;height:48px;border-radius:50%;background:#4a2a3f;border:3px solid var(--haut);box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 18px rgba(196,69,108,.35);display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px}
 .pin-b img,.leaflet-container .leaflet-marker-pane .pin-b img{width:42px!important;height:42px!important;max-width:42px!important;max-height:42px!important;border-radius:50%;object-fit:cover;display:block}
 .pin-b::after{content:'';position:absolute;left:50%;top:100%;margin-top:-1px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid var(--rand,var(--haut))}
 .pin-b.bew img,.leaflet-container .leaflet-marker-pane .pin-b.bew img{width:36px!important;height:36px!important;max-width:36px!important;max-height:36px!important}
@@ -236,16 +236,16 @@ body.needs-setup #setup{display:block}
 .chip.on{background:var(--acc);color:#fff}
 .top .lft{display:flex;gap:8px;min-width:0}
 #wishBtn{position:relative}
-#wishBtn.on{background:var(--koralle,#8664c2);color:#fff}#wishBtn.on svg{fill:currentColor}
-#wishBtn .bd{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:9px;background:var(--koralle,#8664c2);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px var(--chip)}
-#wishBtn.on .bd{background:#fff;color:var(--koralle,#8664c2)}
+#wishBtn.on{background:var(--koralle,#c4456c);color:#fff}#wishBtn.on svg{fill:currentColor}
+#wishBtn .bd{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:9px;background:var(--koralle,#c4456c);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px var(--chip)}
+#wishBtn.on .bd{background:#fff;color:var(--koralle,#c4456c)}
 .merk{flex:none;width:44px;height:44px;border:0;background:none;color:var(--mut);display:grid;place-items:center;border-radius:50%;cursor:pointer}
 .merk svg{width:24px;height:24px}
-.merk.on{color:var(--koralle,#8664c2)}.merk.on svg{fill:currentColor}
+.merk.on{color:var(--koralle,#c4456c)}.merk.on svg{fill:currentColor}
 .head .merk{margin-left:auto;background:var(--line)}
-.wishpin{display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45)) drop-shadow(0 0 8px rgba(134,100,194,.5))}
+.wishpin{display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45)) drop-shadow(0 0 8px rgba(196,69,108,.5))}
 .wishpin svg{display:block;width:100%;height:100%;overflow:visible}
-.badge.wish{background:rgba(134,100,194,.16);color:var(--koralle,#8664c2)}
+.badge.wish{background:rgba(196,69,108,.16);color:var(--koralle,#c4456c)}
 .badge.wish svg{fill:currentColor}
 .besucht{margin:14px 0 4px}
 .form.offen .ratesec{display:none}
@@ -253,12 +253,12 @@ body.needs-setup #setup{display:block}
 #pubFilt{position:absolute;top:52px;left:4px;width:36px;height:36px;padding:0;justify-content:center;opacity:0;transform:translateY(-14px) scale(.6);pointer-events:none;transition:opacity .2s,transform .25s cubic-bezier(.2,.9,.3,1.3)}
 #pubFilt svg{width:18px;height:18px}
 body.pubon #pubFilt{opacity:1;transform:none;pointer-events:auto}
-#pubFilt.act{background:var(--koralle,#8664c2);color:#fff}
+#pubFilt.act{background:var(--koralle,#c4456c);color:#fff}
 .filtmenu{position:absolute;top:96px;right:-52px;min-width:188px;background:var(--panel,#2a1822);color:var(--haut,#f6e9e4);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.45);padding:6px;display:none;z-index:600}
 .filtmenu.on{display:block}
 .filtmenu .mh{font-size:12px;color:var(--mut);padding:6px 10px 4px}
 .filtmenu button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;color:inherit;font:inherit;font-weight:600;padding:8px 10px;border-radius:12px;text-align:left;min-height:44px;cursor:pointer}
-.filtmenu button.on{background:rgba(134,100,194,.18);color:var(--koralle,#8664c2)}
+.filtmenu button.on{background:rgba(196,69,108,.18);color:var(--koralle,#c4456c)}
 .filtmenu .hz{width:30px;height:26px;display:grid;place-items:center;flex:none}
 .filtmenu .hz .herz{filter:none}
 .herz{position:relative;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45)) drop-shadow(0 0 10px var(--hz,transparent))}
@@ -309,7 +309,7 @@ body.pubon #pubFilt{opacity:1;transform:none;pointer-events:auto}
   <button class="fab main" data-act="add" aria-label="Spot hinzufügen" data-ic="plus"></button>
 </div>
 
-<svg id="cross" viewBox="0 0 48 58" aria-hidden="true"><path d="M24 57 16 44h16z" fill="#fff"/><circle cx="24" cy="24" r="21" fill="#8664c2" stroke="#fff" stroke-width="3"/><circle cx="24" cy="24" r="5" fill="#fff"/></svg>
+<svg id="cross" viewBox="0 0 48 58" aria-hidden="true"><path d="M24 57 16 44h16z" fill="#fff"/><circle cx="24" cy="24" r="21" fill="#c4456c" stroke="#fff" stroke-width="3"/><circle cx="24" cy="24" r="5" fill="#fff"/></svg>
 <div id="placeHint" class="chip">Karte verschieben, bis die Nadel sitzt</div>
 <div id="placeBar"><button class="btn" data-act="place-cancel">Abbrechen</button><button class="btn primary" data-act="place-ok">Hier setzen</button></div>
 
@@ -333,8 +333,8 @@ body.pubon #pubFilt{opacity:1;transform:none;pointer-events:auto}
       <circle cx="262" cy="86" r="70" fill="#d65a82" opacity=".5" filter="url(#sgl)"/>
       <path d="M150 210C170 170 210 150 236 132S250 118 252 114" fill="none" stroke="#f6e9e4" stroke-opacity=".45" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 10"/>
       <path d="M390 210C360 172 320 152 296 134S280 120 276 115" fill="none" stroke="#f6e9e4" stroke-opacity=".45" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 10"/>
-      <g transform="translate(252 116) rotate(11) translate(-36 -86) scale(1.5)"><path d="M24 57 16 44h16z" fill="#f6e9e4"/><circle cx="24" cy="24" r="21" fill="#8664c2" stroke="#f6e9e4" stroke-width="3"/></g>
-      <g transform="translate(278 116) rotate(-8) translate(-42 -100) scale(1.75)"><path d="M24 57 16 44h16z" fill="#f6e9e4"/><circle cx="24" cy="24" r="21" fill="#f6e9e4"/><path fill="#8664c2" d="M24 33.5s-9.5-5.8-9.5-12.6a5.4 5.4 0 0 1 9.5-3.5 5.4 5.4 0 0 1 9.5 3.5c0 6.8-9.5 12.6-9.5 12.6z"/></g>
+      <g transform="translate(252 116) rotate(11) translate(-36 -86) scale(1.5)"><path d="M24 57 16 44h16z" fill="#f6e9e4"/><circle cx="24" cy="24" r="21" fill="#c4456c" stroke="#f6e9e4" stroke-width="3"/></g>
+      <g transform="translate(278 116) rotate(-8) translate(-42 -100) scale(1.75)"><path d="M24 57 16 44h16z" fill="#f6e9e4"/><circle cx="24" cy="24" r="21" fill="#f6e9e4"/><path fill="#c4456c" d="M24 33.5s-9.5-5.8-9.5-12.6a5.4 5.4 0 0 1 9.5-3.5 5.4 5.4 0 0 1 9.5 3.5c0 6.8-9.5 12.6-9.5 12.6z"/></g>
     </svg>
     <p class="marke">GS</p>
     <h1>Orte, die nur ihr zwei kennt.</h1>
@@ -688,7 +688,7 @@ const sichtbar = p => WISH ? !!p.offen : !p.offen;
 const sichtPins = () => [...pins.values()].filter(sichtbar);
 const wishPins = () => [...pins.values()].filter(p => p.offen);
 function pinIcon(p) {
-  if (p.offen) return L.divIcon({ className: 'pin', html: `<span class="wishpin" style="width:40px;height:40px"><svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="M12 21.6s-9.6-5.9-9.6-12.3A5.2 5.2 0 0 1 12 6.2a5.2 5.2 0 0 1 9.6 3.1c0 6.4-9.6 12.3-9.6 12.3z" fill="#8664c2" stroke="#f6e9e4" stroke-width="1.6"/><path d="M12 11.2l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" fill="#fff8f2"/></svg></span>`, iconSize: [40, 40], iconAnchor: [20, 37] });
+  if (p.offen) return L.divIcon({ className: 'pin', html: `<span class="wishpin" style="width:40px;height:40px"><svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="M12 21.6s-9.6-5.9-9.6-12.3A5.2 5.2 0 0 1 12 6.2a5.2 5.2 0 0 1 9.6 3.1c0 6.4-9.6 12.3-9.6 12.3z" fill="#c4456c" stroke="#f6e9e4" stroke-width="1.6"/><path d="M12 11.2l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" fill="#fff8f2"/></svg></span>`, iconSize: [40, 40], iconAnchor: [20, 37] });
   const inner = okPhoto(p.photo) ? `<img src="${p.photo}" alt="">` : esc(initials(p.name));
   const g = p.r && p.r.g, f = g ? ringFarbe(g) : ''; // drei klar getrennte Stufen wie bei den öffentlichen Herzen
   const st = f ? ` style="--rand:${f};--glow:${f.replace('rgb', 'rgba').replace(')', ',.55)')}"` : '';
