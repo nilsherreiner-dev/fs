@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-26">
+<meta name="app-version" content="2026.11.26-27">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -1924,20 +1924,23 @@ const stufeVon = g => !g ? 'leer' : g < 5 ? 'riss' : g < 7 ? 'herz' : 'doppel';
 const RISS = 'M12.3 6.9l-1.6 3.1 2.3 2.2-2 3.1 1.4 2.4-.4 3.3';
 function herzSvg(stufe, f) {
   const rand = 'stroke="#f6e9e4" stroke-width="1.6" stroke-linejoin="round"';
-  if (stufe === 'doppel') return `<svg viewBox="0 2.6 26 21.4" aria-hidden="true"><g transform="translate(-2.3 -1.4) scale(.86)"><path d="${HERZ_PFAD}" fill="${f}" opacity=".78" ${rand}/></g><g transform="translate(4.6 1.4)"><path d="${HERZ_PFAD}" fill="${f}" ${rand}/></g></svg>`;
+  if (stufe === 'doppel') { // zwei Herzen als ein Symbol: hinteres in kräftigerem Ton, beide scharf
+    const hinten = f.replace(/\d+/g, v => Math.round(v * 0.78));
+    return `<svg viewBox="0.4 1.6 25.6 22" aria-hidden="true"><g transform="translate(5.6 8.6) rotate(-16) scale(.86) translate(-12 -13.6)"><path d="${HERZ_PFAD}" fill="${hinten}" ${rand}/></g><g transform="translate(16.2 13.8) rotate(9) scale(.9) translate(-12 -13.6)"><path d="${HERZ_PFAD}" fill="${f}" ${rand}/></g></svg>`;
+  }
   if (stufe === 'riss') return `<svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="${HERZ_PFAD}" fill="${f}" ${rand}/><path d="${RISS}" fill="none" stroke="#f6e9e4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   return `<svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="${HERZ_PFAD}" fill="${f}" ${rand}/></svg>`;
 }
+// Größe je Symbol: einfaches Herz etwas kleiner, Doppelherz breiter. Keine Zahlen – Symbol und Farbe zeigen die Stufe.
+const herzMass = (st, px) => st === 'doppel' ? [Math.round(px * 1.25), px] : st === 'riss' ? [px, px] : [Math.round(px * 0.8), Math.round(px * 0.8)];
 function herzHtml(o, px) {
-  const f = herzFarbe(o.r.g), st = stufeVon(o.r.g), hell = st === 'leer' || o.r.g >= 7.5;
-  const w = st === 'doppel' ? Math.round(px * 1.3) : px;
-  const zahl = o.r.g && px >= 34 ? `<b class="${st}">${fmtR(o.r.g)}</b>` : '';
-  return `<span class="herz ${st}${hell ? ' hell' : ''}" style="width:${w}px;height:${px}px;--hz:${f.replace('rgb', 'rgba').replace(')', ',.55)')}">${herzSvg(st, f)}${zahl}</span>`;
+  const f = herzFarbe(o.r.g), st = stufeVon(o.r.g), [w, h] = herzMass(st, px);
+  return `<span class="herz ${st}" style="width:${w}px;height:${h}px;--hz:${f.replace('rgb', 'rgba').replace(')', ',.55)')}">${herzSvg(st, f)}</span>`;
 }
 function pubIcon(o) {
   const px = Math.round(Math.min(46, 32 + Math.log2(1 + o.n) * 4)); // mehr Bewertungen = etwas größer
-  const w = stufeVon(o.r.g) === 'doppel' ? Math.round(px * 1.3) : px;
-  return L.divIcon({ className: 'pin', html: herzHtml(o, px), iconSize: [w, px], iconAnchor: [w / 2, px * 0.92] });
+  const [w, h] = herzMass(stufeVon(o.r.g), px);
+  return L.divIcon({ className: 'pin', html: herzHtml(o, px), iconSize: [w, h], iconAnchor: [w / 2, h * 0.92] });
 }
 let pubFilter = PUB_STUFEN[LS.get('spots.pubFilter', 'alle')] ? LS.get('spots.pubFilter', 'alle') : 'alle';
 const pubPasst = o => pubFilter === 'alle' || stufeVon(o.r.g) === pubFilter;
