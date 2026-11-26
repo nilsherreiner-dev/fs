@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-34">
+<meta name="app-version" content="2026.11.26-35">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -249,6 +249,8 @@ body.needs-setup #setup{display:block}
 .badge.wish svg{fill:currentColor}
 .besucht{margin:14px 0 4px}
 .form.offen .ratesec{display:none}
+.rate.fehlt{background:rgba(255,122,127,.12);border-radius:12px;padding:8px 10px;box-shadow:0 0 0 1.5px rgba(255,122,127,.6)}
+.rate.fehlt>span:first-child{color:#ff9a9e;font-weight:700}
 .pubwrap{position:relative;display:flex}
 #pubFilt{position:absolute;top:52px;left:4px;width:36px;height:36px;padding:0;justify-content:center;opacity:0;transform:translateY(-14px) scale(.6);pointer-events:none;transition:opacity .2s,transform .25s cubic-bezier(.2,.9,.3,1.3)}
 #pubFilt svg{width:18px;height:18px}
@@ -798,8 +800,8 @@ function showForm() {
     <button type="button" class="linkbtn" data-act="move">Position auf der Karte ändern</button>
     <label class="chk"><input type="checkbox" id="fOffen"${d.offen ? ' checked' : ''}><span><b>${ico('heart')} Noch nicht besucht</b><br><span class="small mut">Landet in euren Favoriten (Herz oben). Bewerten könnt ihr, sobald ihr da wart.</span></span></label>
     <div class="ratesec"><h3>Bewertung</h3>
-    ${CATS.map(([k, l]) => `<div class="rate"><span>${l}</span><span class="r">${stars(k, d.r[k], true)}<span class="n" id="n-${k}">${d.r[k]}/10</span></span></div>`).join('')}
-    <p class="small mut" style="margin-top:6px">Linke Sternhälfte = halber Stern. Nochmal auf denselben Wert tippen setzt auf 0.</p>
+    ${CATS.map(([k, l]) => `<div class="rate" data-rk="${k}"><span>${l}</span><span class="r">${stars(k, d.r[k], true)}<span class="n" id="n-${k}">${d.r[k]}/10</span></span></div>`).join('')}
+    <p class="small mut" style="margin-top:6px">Pro Kategorie mindestens ein Stern. Linke Sternhälfte = halber Stern. Nochmal auf denselben Wert tippen setzt zurück.</p>
     <label class="chk pubchk"><input type="checkbox" id="fPub"${d.pub ? ' checked' : ''}><span><b>Auf der öffentlichen Karte teilen</b><br><span class="small mut">Ohne Fotos. Andere sehen von dir nur dein Profilbild und „${esc(kurz(myName()))}“.${d.pubBy && d.pubBy !== me.uid ? ' Ein anderes Mitglied hat diesen Spot geteilt.' : ''}</span></span></label></div>
     <div class="row-btns"><button type="button" class="btn" data-act="cancel">Abbrechen</button><button type="submit" class="btn primary">Speichern</button></div>
   </form>`, 'form');
@@ -1983,6 +1985,15 @@ function savePin() {
   const d = draft;
   if (!d) return;
   if (!d.name) { toast('Bitte gib dem Spot einen Namen'); $('#fName').focus(); return; }
+  if (!d.offen) { // besuchte Spots: in jeder Kategorie mindestens ein ganzer Stern (= 2 von 10)
+    const fehlt = CATS.filter(([k]) => clampR(d.r[k]) < 2);
+    for (const el of document.querySelectorAll('#pf .rate[data-rk]')) el.classList.toggle('fehlt', fehlt.some(([k]) => k === el.dataset.rk));
+    if (fehlt.length) {
+      toast(`Bitte mindestens einen Stern vergeben: ${fehlt.map(([, l]) => l).join(', ')}`, 4500);
+      const el = $(`#pf .rate[data-rk="${fehlt[0][0]}"]`); if (el && el.scrollIntoView) el.scrollIntoView({ block: "center", behavior: "smooth" });
+      return;
+    }
+  }
   if (!fs) { toast('Nicht verbunden'); return; }
   const { F } = fs;
   const data = { name: d.name, desc: d.desc, address: d.address, lat: d.lat, lng: d.lng, photo: d.photo || '', r: { g: clampR(d.r.g), a: clampR(d.r.a), u: clampR(d.r.u) }, rs: 10, pub: d.pub && !d.offen ? (d.pubBy || me.uid) : null, offen: !!d.offen, updatedAt: F.serverTimestamp() };
@@ -2252,7 +2263,7 @@ document.addEventListener('click', e => {
   const fm = $('#filtMenu');
   if (fm && fm.classList.contains('on') && !e.target.closest('#filtMenu') && !e.target.closest('#pubFilt')) fm.classList.remove('on');
   const st = e.target.closest('[data-star]');
-  if (st && draft) { const k = st.dataset.star, v = +st.dataset.v; draft.r[k] = draft.r[k] === v ? 0 : v; renderStars(k); return; }
+  if (st && draft) { const k = st.dataset.star, v = +st.dataset.v; draft.r[k] = draft.r[k] === v ? 0 : v; renderStars(k); const row = $(`#pf .rate[data-rk="${k}"]`); if (row && draft.r[k] >= 2) row.classList.remove('fehlt'); return; }
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act;
   if (a === 'close') closeSheet();
