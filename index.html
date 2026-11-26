@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GS">
-<meta name="app-version" content="2026.11.26-33">
+<meta name="app-version" content="2026.11.26-34">
 <meta name="theme-color" content="#1c1016">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -243,9 +243,8 @@ body.needs-setup #setup{display:block}
 .merk svg{width:24px;height:24px}
 .merk.on{color:var(--koralle,#c4456c)}.merk.on svg{fill:currentColor}
 .head .merk{margin-left:auto;background:var(--line)}
-.wishpin{box-sizing:border-box;position:relative;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#2a1722;border:3px dashed #f6e9e4;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 0 3px rgba(42,23,34,.9),0 0 18px rgba(246,233,228,.45)}
-.wishpin::after{content:'';position:absolute;left:50%;top:100%;margin-top:2px;transform:translateX(-50%);border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #f6e9e4}
-.wishpin svg{width:22px;height:22px;fill:none;stroke:#f6e9e4;stroke-width:2.2;stroke-linejoin:round}
+.wishpin{display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45)) drop-shadow(0 0 8px rgba(246,233,228,.45))}
+.wishpin svg{display:block;width:100%;height:100%;overflow:visible}
 .badge.wish{background:rgba(196,69,108,.16);color:var(--koralle,#c4456c)}
 .badge.wish svg{fill:currentColor}
 .besucht{margin:14px 0 4px}
@@ -689,8 +688,8 @@ const sichtbar = p => WISH ? !!p.offen : !p.offen;
 const sichtPins = () => [...pins.values()].filter(sichtbar);
 const wishPins = () => [...pins.values()].filter(p => p.offen);
 function pinIcon(p) {
-  // Favorit (noch nicht besucht): eigene Form – runder Pin mit gestricheltem Ring und Herz-Umriss, hebt sich von den öffentlichen Herzen ab
-  if (p.offen) return L.divIcon({ className: 'pin', html: `<span class="wishpin"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-8-4.9-8-10.3A4.4 4.4 0 0 1 12 7.4 4.4 4.4 0 0 1 20 10c0 5.4-8 10.3-8 10.3z"/></svg></span>`, iconSize: [44, 54], iconAnchor: [22, 54] });
+  // Favorit (noch nicht besucht): weißes Herz mit rosé Rand und Stern – Gegenstück zu den farbigen öffentlichen Herzen
+  if (p.offen) return L.divIcon({ className: 'pin', html: `<span class="wishpin" style="width:40px;height:40px"><svg viewBox="2 4.4 20 18.4" aria-hidden="true"><path d="M12 21.6s-9.6-5.9-9.6-12.3A5.2 5.2 0 0 1 12 6.2a5.2 5.2 0 0 1 9.6 3.1c0 6.4-9.6 12.3-9.6 12.3z" fill="#f6e9e4" stroke="#c4456c" stroke-width="1.8"/><path d="M12 11.2l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" fill="#c4456c"/></svg></span>`, iconSize: [40, 40], iconAnchor: [20, 37] });
   const inner = okPhoto(p.photo) ? `<img src="${p.photo}" alt="">` : esc(initials(p.name));
   const g = p.r && p.r.g, f = g ? ringFarbe(g) : ''; // drei klar getrennte Stufen wie bei den öffentlichen Herzen
   const st = f ? ` style="--rand:${f};--glow:${f.replace('rgb', 'rgba').replace(')', ',.55)')}"` : '';
@@ -2050,7 +2049,7 @@ const HERZ_STUFEN = [[0, [74, 15, 36]], [5, [138, 35, 70]], [7.5, [214, 74, 120]
 const RING = { riss: 'rgb(46,6,20)', herz: 'rgb(170,44,88)', doppel: 'rgb(255,150,186)' };
 const ringFarbe = g => RING[stufeVon(g)] || '';
 function herzFarbe(g) {
-  if (!g) return 'rgb(246,233,228)';
+  if (!g) return 'rgb(14,6,10)'; // ohne Bewertung: schwarzes Herz (weiß sind die Favoriten)
   for (let i = 1; i < HERZ_STUFEN.length; i++) {
     const [a, ca] = HERZ_STUFEN[i - 1], [b, cb] = HERZ_STUFEN[i];
     if (g <= b) { const t = (g - a) / (b - a); return `rgb(${ca.map((c, j) => Math.round(c + (cb[j] - c) * t)).join(',')})`; }
