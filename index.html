@@ -6,13 +6,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FS">
-<meta name="app-version" content="2026.11.26-19">
+<meta name="apple-mobile-web-app-title" content="GS">
+<meta name="app-version" content="2026.11.26-20">
 <meta name="theme-color" content="#3a1f33">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<title>FS</title>
+<title>GS</title>
 <link rel="stylesheet" href="lib/leaflet/leaflet.css">
 <link rel="stylesheet" href="lib/maplibre-gl.css">
 <link rel="stylesheet" href="lib/fonts.css">
@@ -271,13 +271,13 @@ body.needs-setup #setup{display:block}
       <g transform="translate(340 96)"><path d="M24 57 16 44h16z" fill="#fff"/><circle cx="24" cy="24" r="21" fill="#7cc4b8" stroke="#fff" stroke-width="3"/></g>
       <g transform="translate(232 70) scale(1.5)"><path d="M24 57 16 44h16z" fill="#fff"/><circle cx="24" cy="24" r="21" fill="#f2542d" stroke="#fff" stroke-width="3"/><circle cx="24" cy="24" r="6" fill="#fff"/></g>
     </svg>
-    <h1>FS</h1>
+    <h1>GS</h1>
     <p class="mut" id="setupIntro"></p>
     <div id="setupFields"></div>
     <button class="btn primary wide" type="submit" id="lgBtn">Anmelden</button>
     <p class="err" id="setupErr"></p>
     <p class="small mut" id="setupSwitch"></p>
-    <p class="small" style="text-align:center;margin:14px 0 0"><a href="start/" target="_blank" rel="noopener" style="color:var(--acc);font-weight:700">So funktioniert FS</a></p>
+    <p class="small" style="text-align:center;margin:14px 0 0"><a href="start/" target="_blank" rel="noopener" style="color:var(--acc);font-weight:700">So funktioniert GS</a></p>
     <p class="small mut" style="text-align:center;margin-top:10px"><a href="rechtliches/datenschutz.html" target="_blank" rel="noopener" style="color:inherit">Datenschutz</a> · <a href="rechtliches/nutzungsbedingungen.html" target="_blank" rel="noopener" style="color:inherit">Nutzungsbedingungen</a> · <a href="rechtliches/impressum.html" target="_blank" rel="noopener" style="color:inherit">Impressum</a></p>
   </form>
 </div>
@@ -1548,7 +1548,7 @@ async function newLink() {
 }
 function shareLink(code) {
   const name = curKarte ? curKarte.name : 'unsere Karte';
-  const text = `Ich lade dich zu unserer Karte „${name}“ in FS ein.\n\nDein Code: ${fmtCode(code)}\n\nNoch kein Konto? Öffne den Link in Safari, wähle über Teilen „Zum Home-Bildschirm“, öffne FS und registriere dich mit dem Code.\nSchon dabei? In FS unter Einstellungen › Karten den Code eingeben.\n\n${appUrl()}`;
+  const text = `Ich lade dich zu unserer Karte „${name}“ in GS ein.\n\nDein Code: ${fmtCode(code)}\n\nNoch kein Konto? Öffne den Link in Safari, wähle über Teilen „Zum Home-Bildschirm“, öffne GS und registriere dich mit dem Code.\nSchon dabei? In GS unter Einstellungen › Karten den Code eingeben.\n\n${appUrl()}`;
   if (navigator.share) navigator.share({ text }).catch(() => {});
   else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast('Einladung kopiert')).catch(() => toast(fmtCode(code), 6000));
   else toast(fmtCode(code), 6000);

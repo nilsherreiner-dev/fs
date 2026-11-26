@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#3a1f33">
-<title>FS – Zugang anfragen</title>
+<title>GS – Zugang anfragen</title>
 <link rel="icon" href="../icon-192.png">
 <link rel="apple-touch-icon" href="../icon-180.png">
 <link rel="stylesheet" href="../lib/fonts.css">
@@ -42,7 +42,7 @@ body.sent form{display:none}body.sent .done{display:block}
 <div class="wrap">
   <div class="hero">
     <svg viewBox="0 0 48 58" aria-hidden="true"><path d="M24 57 16 44h16z" fill="#f6efe2"/><circle cx="24" cy="24" r="21" fill="#f6efe2"/><path d="M24 33.5s-9-5.4-9-11.2a4.9 4.9 0 0 1 9-2.7 4.9 4.9 0 0 1 9 2.7c0 5.8-9 11.2-9 11.2z" fill="#f2542d"/></svg>
-    <h1>FS</h1>
+    <h1>GS</h1>
     <p>Eure Karte für geheime Orte zu zweit. Gerade in einer geschlossenen Testphase.</p>
   </div>
   <div class="card">
@@ -60,7 +60,7 @@ body.sent form{display:none}body.sent .done{display:block}
       <p>Deine Anfrage ist angekommen. Sobald dein Zugang freigegeben ist, bekommst du deinen Einladungscode per Mail.</p>
     </div>
   </div>
-  <p style="text-align:center;font-size:15px;margin:18px 0 0"><a href="../start/" style="color:#fff;font-weight:700">So funktioniert FS</a></p>
+  <p style="text-align:center;font-size:15px;margin:18px 0 0"><a href="../start/" style="color:#fff;font-weight:700">So funktioniert GS</a></p>
   <p style="text-align:center;font-size:13px;margin:10px 0 0"><a href="../rechtliches/datenschutz.html" style="color:#e3d3dc">Datenschutz</a> · <a href="../rechtliches/nutzungsbedingungen.html" style="color:#e3d3dc">Nutzungsbedingungen</a> · <a href="../rechtliches/impressum.html" style="color:#e3d3dc">Impressum</a></p>
 </div>
 <script type="module">
@@ -85,7 +85,7 @@ $('#f').addEventListener('submit', async e => {
   const email = $('#em').value.trim().toLowerCase();
   err.textContent = '';
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'Bitte gib eine gültige E-Mail-Adresse ein.'; return; }
-  if (!$('#age').checked) { err.textContent = 'FS ist erst ab 18 Jahren.'; return; }
+  if (!$('#age').checked) { err.textContent = 'GS ist erst ab 18 Jahren.'; return; }
   if (!$('#ok').checked) { err.textContent = 'Bitte bestätige, dass wir deine E-Mail dafür speichern dürfen.'; return; }
   if ($('#hp').value) { document.body.classList.add('sent'); return; } // Bot
   try {

@@ -1,5 +1,5 @@
 /*
- * FS – Server-Teil für Einladungscodes
+ * GS – Server-Teil für Einladungscodes
  *
  * Ablauf:
  *  1. Jemand trägt auf /anfrage/ seine E-Mail ein → Dokument anfragen/{id} mit status "neu".
@@ -23,7 +23,7 @@ const db = getFirestore();
 setGlobalOptions({ region: 'europe-west3', maxInstances: 3 });
 
 const BREVO_KEY = defineSecret('BREVO_KEY');
-const SENDER = { name: 'FS', email: 'einladung@geheimespots.de' };
+const SENDER = { name: 'GS', email: 'einladung@geheimespots.de' };
 const ADMIN_MAIL = 'nilshrnr@icloud.com';
 const APP_URL = 'https://app.geheimespots.de/';
 const TOOL_URL = APP_URL + 'codes/';
@@ -39,7 +39,7 @@ async function sendMail(to, subject, html, text) {
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: { 'api-key': BREVO_KEY.value(), 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify({ sender: SENDER, replyTo: { email: 'kontakt@geheimespots.de', name: 'FS' }, to: [{ email: to }], subject, htmlContent: html, textContent: text })
+    body: JSON.stringify({ sender: SENDER, replyTo: { email: 'kontakt@geheimespots.de', name: 'GS' }, to: [{ email: to }], subject, htmlContent: html, textContent: text })
   });
   if (!res.ok) throw new Error(`Brevo ${res.status}: ${(await res.text()).slice(0, 300)}`);
 }
@@ -48,43 +48,43 @@ function inviteMail(code) {
   const c = fmtCode(code);
   const text = `Hallo,
 
-dein Zugang zu FS ist freigegeben. Dein persönlicher Einladungscode:
+dein Zugang zu GS ist freigegeben. Dein persönlicher Einladungscode:
 
 ${c}
 
 So geht's:
 1. Öffne ${APP_URL} in Safari.
 2. Tippe auf Teilen und wähle „Zum Home-Bildschirm“.
-3. Öffne FS vom Home-Bildschirm, tippe auf „Mit Einladungscode registrieren“ und gib den Code ein.
+3. Öffne GS vom Home-Bildschirm, tippe auf „Mit Einladungscode registrieren“ und gib den Code ein.
 
 Ausführliche Anleitung: ${APP_URL}start/
 
 Der Code gilt für ein Konto. Wenn du diese Mail nicht erwartet hast, kannst du sie einfach ignorieren.
 
-FS`;
+GS`;
   const html = `<!doctype html><html lang="de"><body style="margin:0;background:#f4f1ec;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#16191d">
 <div style="max-width:480px;margin:0 auto;padding:32px 20px">
-  <div style="background:#3a1f33;border-radius:20px 20px 0 0;padding:22px 24px;color:#f6efe2;font-size:22px;font-weight:700">FS</div>
+  <div style="background:#3a1f33;border-radius:20px 20px 0 0;padding:22px 24px;color:#f6efe2;font-size:22px;font-weight:700">GS</div>
   <div style="background:#ffffff;border-radius:0 0 20px 20px;padding:24px">
-    <p style="margin:0 0 14px;font-size:16px;line-height:1.5">Hallo,<br>dein Zugang zu FS ist freigegeben. Hier ist dein persönlicher Einladungscode:</p>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.5">Hallo,<br>dein Zugang zu GS ist freigegeben. Hier ist dein persönlicher Einladungscode:</p>
     <div style="font-size:30px;font-weight:700;letter-spacing:4px;text-align:center;background:#f4f1ec;border-radius:14px;padding:16px 8px;margin:0 0 18px">${esc(c)}</div>
     <ol style="margin:0 0 18px;padding-left:20px;font-size:15px;line-height:1.6">
       <li>Öffne den Link unten in Safari.</li>
       <li>Tippe auf Teilen und wähle „Zum Home-Bildschirm“.</li>
-      <li>Öffne FS, tippe auf „Mit Einladungscode registrieren“ und gib den Code ein.</li>
+      <li>Öffne GS, tippe auf „Mit Einladungscode registrieren“ und gib den Code ein.</li>
     </ol>
-    <p style="text-align:center;margin:0 0 18px"><a href="${APP_URL}" style="display:inline-block;background:#f2542d;color:#ffffff;text-decoration:none;font-weight:700;padding:13px 26px;border-radius:12px">FS öffnen</a></p>
+    <p style="text-align:center;margin:0 0 18px"><a href="${APP_URL}" style="display:inline-block;background:#f2542d;color:#ffffff;text-decoration:none;font-weight:700;padding:13px 26px;border-radius:12px">GS öffnen</a></p>
     <p style="text-align:center;margin:0 0 18px;font-size:14px"><a href="${APP_URL}start/" style="color:#f2542d;font-weight:700">Anleitung Schritt für Schritt</a></p>
     <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">Der Code gilt für ein Konto. Wenn du diese Mail nicht erwartet hast, kannst du sie einfach ignorieren.</p>
   </div>
 </div></body></html>`;
-  return { subject: `Dein Zugang zu FS: ${c}`, html, text };
+  return { subject: `Dein Zugang zu GS: ${c}`, html, text };
 }
 
 async function notifyAdmin(email, note) {
-  const text = `Neue Anfrage für FS von ${email}.${note ? '\n' + note : ''}\n\nFreigeben im Code-Tool: ${TOOL_URL}`;
-  const html = `<p>Neue Anfrage für FS von <b>${esc(email)}</b>.</p>${note ? `<p>${esc(note)}</p>` : ''}<p><a href="${TOOL_URL}">Im Code-Tool freigeben</a></p>`;
-  try { await sendMail(ADMIN_MAIL, `FS: neue Anfrage von ${email}`, html, text); } catch (e) { logger.warn('Admin-Mail fehlgeschlagen', e); }
+  const text = `Neue Anfrage für GS von ${email}.${note ? '\n' + note : ''}\n\nFreigeben im Code-Tool: ${TOOL_URL}`;
+  const html = `<p>Neue Anfrage für GS von <b>${esc(email)}</b>.</p>${note ? `<p>${esc(note)}</p>` : ''}<p><a href="${TOOL_URL}">Im Code-Tool freigeben</a></p>`;
+  try { await sendMail(ADMIN_MAIL, `GS: neue Anfrage von ${email}`, html, text); } catch (e) { logger.warn('Admin-Mail fehlgeschlagen', e); }
 }
 
 /* Code finden oder anlegen und verschicken */
@@ -290,7 +290,7 @@ exports.neueMeldung = onDocumentCreated({ document: 'meldungen/{id}', secrets: [
   const name = o && o.exists ? o.data().name : 'unbekannter Ort';
   const text = `Neue Meldung zu „${name}“ (${d.grund || '?'}).${d.text ? '\n' + d.text : ''}\n\nPrüfen im Code-Tool: ${TOOL_URL}`;
   const html = `<p>Neue Meldung zu <b>${esc(name)}</b> (${esc(d.grund || '?')}).</p>${d.text ? `<p>${esc(d.text)}</p>` : ''}<p><a href="${TOOL_URL}">Im Code-Tool prüfen</a></p>`;
-  try { await sendMail(ADMIN_MAIL, `FS: Meldung zu ${name}`, html, text); } catch (e) { logger.warn('Meldungs-Mail fehlgeschlagen', e); }
+  try { await sendMail(ADMIN_MAIL, `GS: Meldung zu ${name}`, html, text); } catch (e) { logger.warn('Meldungs-Mail fehlgeschlagen', e); }
 });
 
 // nur für lokale Tests

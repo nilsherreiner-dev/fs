@@ -1,6 +1,6 @@
 {
-  "name": "FS",
-  "short_name": "FS",
+  "name": "GS",
+  "short_name": "GS",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
