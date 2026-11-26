@@ -4,7 +4,7 @@ KEY = 'AIzaSyBi8vKQETOYjboNPN72zPrSsuZQLUGOKqI'
 DB = 'projects/projekt-fs/databases/(default)'
 B = 'https://firestore.googleapis.com/v1/' + DB + '/documents'
 def call(url, body=None, tok=None, method=None):
-    h = {'content-type': 'application/json'}
+    h = {'content-type': 'application/json', 'Referer': 'https://app.geheimespots.de/'}  # API-Schlüssel ist auf die App-Domain beschränkt
     if tok: h['Authorization'] = 'Bearer ' + tok
     req = urllib.request.Request(url, data=json.dumps(body).encode() if body is not None else None, headers=h, method=method or ('POST' if body is not None else 'GET'))
     try: r = urllib.request.urlopen(req); return r.status, json.loads(r.read() or b'{}')

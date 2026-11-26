@@ -5,7 +5,7 @@ import json, subprocess, urllib.request
 P = 'projekt-fs'; KEY = 'AIzaSyBi8vKQETOYjboNPN72zPrSsuZQLUGOKqI'
 B = f'https://firestore.googleapis.com/v1/projects/{P}/databases/(default)/documents'
 def post(url, body, token=None):
-    h = {'Content-Type': 'application/json'}
+    h = {'Content-Type': 'application/json', 'Referer': 'https://app.geheimespots.de/'}  # API-Schlüssel ist auf die App-Domain beschränkt
     if token: h.update({'Authorization': 'Bearer ' + token, 'x-goog-user-project': P})
     r = urllib.request.Request(url, method='POST', data=json.dumps(body).encode(), headers=h)
     try:

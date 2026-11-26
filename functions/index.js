@@ -373,6 +373,27 @@ exports.neueMeldung = onDocumentCreated({ document: 'meldungen/{id}', secrets: [
   ]);
 });
 
+/* Hinweis an den Admin bei neuen Fotovorschlägen – ohne Personendaten, höchstens alle 6 Stunden eine Mail */
+const FOTO_HINWEIS_ABSTAND = 6 * 3600 * 1000;
+async function fotoHinweis(oid, now = Date.now()) {
+  const ref = db.doc('einstellungen/hinweise');
+  const s = await ref.get();
+  const letzte = s.exists && s.data().foto && s.data().foto.toMillis ? s.data().foto.toMillis() : 0;
+  if (now - letzte < FOTO_HINWEIS_ABSTAND) return false;
+  await ref.set({ foto: Timestamp.fromMillis(now) }, { merge: true });
+  const offen = (await db.collection('ortFotos').where('status', '==', 'offen').get()).size;
+  const o = oid ? await db.doc('orte/' + oid).get() : null;
+  const name = o && o.exists ? o.data().name : 'einen öffentlichen Ort';
+  const text = `Neuer Fotovorschlag für „${name}“. Offen zur Prüfung: ${offen}.\n\nPrüfen im Code-Tool unter „Ortsfotos“: ${TOOL_URL}`;
+  const html = `<p>Neuer Fotovorschlag für <b>${esc(name)}</b>. Offen zur Prüfung: <b>${offen}</b>.</p><p><a href="${TOOL_URL}">Im Code-Tool prüfen</a> (Bereich „Ortsfotos“)</p>`;
+  await sendMail(ADMIN_MAIL, 'GS: neuer Fotovorschlag', html, text);
+  return true;
+}
+exports.neuerFotovorschlag = onDocumentCreated({ document: 'ortFotos/{fid}', secrets: [BREVO_KEY] }, async event => {
+  const d = (event.data && event.data.data()) || {};
+  try { await fotoHinweis(d.ort); } catch (e) { logger.warn('Foto-Hinweis fehlgeschlagen', e); }
+});
+
 /* Entscheidung an die meldende Person (Art. 16 Abs. 5 DSA) */
 exports.meldungEntschieden = onDocumentUpdated({ document: 'meldungen/{id}', secrets: [BREVO_KEY] }, async event => {
   const b = event.data.before.data() || {}, a = event.data.after.data() || {};
@@ -456,4 +477,4 @@ exports.kontoEntsperrt = onDocumentDeleted('kontosperren/{uid}', async event => 
 });
 
 // nur für lokale Tests
-if (process.env.FS_TEST) exports._test = { issue, inviteMail, genCode, aufraeumen, spotSync, ortRechnen, kurz, eidOf, distM, profilAufraeumen, gsMail };
+if (process.env.FS_TEST) exports._test = { fotoHinweis, issue, inviteMail, genCode, aufraeumen, spotSync, ortRechnen, kurz, eidOf, distM, profilAufraeumen, gsMail };
